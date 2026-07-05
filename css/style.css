@@ -307,10 +307,31 @@ html, body {
   min-width: 300px;
 }
 #card.success { animation: card-glow 1s ease; }
+#card-level {
+  display: inline-block;
+  background: #fff3d6;
+  border: 2px solid #ffd35c;
+  border-radius: 999px;
+  padding: 3px 14px;
+  margin-bottom: 4px;
+  font-size: .95rem;
+  font-weight: bold;
+  color: #b8860b;
+  white-space: nowrap;
+}
 #card-emoji { font-size: 5.5rem; line-height: 1.15; }
-#card-hanzi { font-size: 2.6rem; color: #2b4a6f; font-weight: bold; }
-#card-pinyin { font-size: 1.9rem; color: #e2574c; font-weight: bold; }
+#card-hanzi { font-size: 2.6rem; color: #2b4a6f; font-weight: bold; line-height: 1.2; }
+#card-pinyin { font-size: 1.9rem; color: #e2574c; font-weight: bold; line-height: 1.25; }
 #card-en { font-size: 1.1rem; color: #55708c; }
+
+/* longer phrases (⭐⭐) and sentences (⭐⭐⭐): shrink text + emoji so they fit */
+#card.lvl-2 #card-emoji { font-size: 4.4rem; }
+#card.lvl-2 #card-hanzi { font-size: 2.2rem; }
+#card.lvl-2 #card-pinyin { font-size: 1.6rem; }
+#card.lvl-3 #card-emoji { font-size: 3.4rem; }
+#card.lvl-3 #card-hanzi { font-size: 1.85rem; }
+#card.lvl-3 #card-pinyin { font-size: 1.3rem; }
+#card.lvl-3 #card-level { background: #ffe1ec; border-color: #ff9ec4; color: #c2185b; }
 
 #feedback {
   min-height: 1.6em;

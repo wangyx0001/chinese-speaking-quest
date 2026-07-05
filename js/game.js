@@ -52,6 +52,26 @@ window.Game = (function () {
       : who.emoji;
   }
 
+  /** Number of Chinese characters in a string (drives the difficulty level). */
+  function hanziCount(text) {
+    const m = String(text || '').match(/[一-鿿]/g);
+    return m ? m.length : 0;
+  }
+
+  /** Difficulty band for an item: 1 = word, 2 = phrase, 3 = sentence. */
+  function levelOf(item) {
+    const n = hanziCount(item.hanzi);
+    if (n >= 5) return 3;
+    if (n >= 3) return 2;
+    return 1;
+  }
+
+  const LEVEL_BADGE = {
+    1: '⭐ 词 word',
+    2: '⭐⭐ 短语 phrase',
+    3: '⭐⭐⭐ 句子 sentence',
+  };
+
   function chapter() { return state.story.chapters[state.chapterIdx]; }
 
   function isFinale() { return state.wordIdx >= chapter().words.length; }
@@ -263,11 +283,16 @@ window.Game = (function () {
     state.presentId++;               // new card — cancel any pending auto-listen
     if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     const item = current();
+    const level = levelOf(item);
+    $('#card-level').textContent = LEVEL_BADGE[level];
     $('#card-emoji').innerHTML = heroHTML(item);
     $('#card-hanzi').textContent = item.hanzi;
     $('#card-pinyin').textContent = item.pinyin;
     $('#card-en').textContent = (isFinale() ? '✨ magic phrase: ' : '') + item.en;
-    $('#card').classList.remove('success');
+    // shrink the text for longer phrases/sentences so they fit on the card
+    const card = $('#card');
+    card.classList.remove('success', 'lvl-1', 'lvl-2', 'lvl-3');
+    card.classList.add('lvl-' + level);
     feedback('');
     playModel(true);
   }
@@ -324,8 +349,11 @@ window.Game = (function () {
     mic.classList.add('listening');
     mic.textContent = '👂';
     feedback('Listening… say it loud! 大声说吧!');
+    // give her more time for longer phrases/sentences so she isn't cut off
+    const chars = hanziCount(current().hanzi);
+    const timeoutMs = Math.min(13000, 5000 + Math.max(0, chars - 2) * 900);
     Speech.listen({
-      timeoutMs: 6000,
+      timeoutMs: timeoutMs,
       onDone: (result) => {
         if (token !== state.listenToken) return; // she left the scene mid-listen
         state.listening = false;
