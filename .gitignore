@@ -1,0 +1,12 @@
+# Local dev tooling (not needed for the hosted site)
+.claude/
+
+# Unused original artwork (the background-removed versions are what the game uses)
+redpanda icon.webp
+Princess icon.webp
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
+*.log
+node_modules/

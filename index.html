@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+  说中文大冒险 — Chinese Speaking Quest
+  A speaking game for kids: help the heroes by saying Mandarin words out loud!
+
+  HOW TO PLAY: double-click this file to open it in Chrome or Edge (Edge has the
+  nicest Chinese voice, "Xiaoxiao"). Allow the microphone when asked.
+  If the microphone is blocked on file:// pages, run a tiny local server instead:
+      python -m http.server 8000
+  ...then open http://localhost:8000
+
+  TO CHANGE WORDS/STORIES: edit js/data.js — everything she practices lives there.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>说中文大冒险 · Chinese Speaking Quest</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ TITLE SCREEN ============ -->
+    <section id="screen-title" class="screen">
+      <div class="title-heroes">
+        <span class="title-hero bounce1"><img class="hero-img" src="redpanda icon.png" alt="Red Pandy"></span>
+        <span class="title-hero bounce2"><img class="hero-img" src="Skye-thumbnail.png" alt="Skye"></span>
+        <span class="title-hero bounce3"><img class="hero-img" src="princess icon.png" alt="Princess"></span>
+      </div>
+      <h1 id="game-title">说中文大冒险</h1>
+      <h2 class="subtitle">Chinese Speaking Quest</h2>
+      <p class="tagline">Say the magic words out loud to help your friends!</p>
+      <button id="btn-play" class="btn-big btn-play">▶️ PLAY 开始!</button>
+      <p class="parent-note" id="boot-note"></p>
+    </section>
+
+    <!-- ============ STORY SELECT ============ -->
+    <section id="screen-story" class="screen hidden">
+      <header class="top-bar">
+        <button class="btn-icon" id="btn-story-back">🔙</button>
+        <h2>Pick your adventure! 选一个故事</h2>
+        <div class="star-hud">⭐ <span class="star-count">0</span></div>
+      </header>
+      <div id="story-tiles"></div>
+      <div class="bottom-bar">
+        <button id="btn-stickers" class="btn-chip">📖 Sticker Book</button>
+        <button id="btn-helper-toggle" class="btn-chip">👨‍👩‍👧 Helper: OFF</button>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER MAP ============ -->
+    <section id="screen-map" class="screen hidden">
+      <header class="top-bar">
+        <button class="btn-icon" id="btn-map-back">🔙</button>
+        <h2 id="map-title"></h2>
+        <div class="star-hud">⭐ <span class="star-count">0</span></div>
+      </header>
+      <p id="map-tagline" class="map-tagline"></p>
+      <div id="map-path"></div>
+    </section>
+
+    <!-- ============ GAME SCENE ============ -->
+    <section id="screen-scene" class="screen hidden">
+      <header class="top-bar scene-bar">
+        <button class="btn-icon" id="btn-scene-back">🔙</button>
+        <h2 id="scene-title"></h2>
+        <div class="star-hud">⭐ <span class="star-count">0</span></div>
+      </header>
+
+      <div id="scene-stage">
+        <div id="stage-deco"></div>
+        <div id="tableau"></div>
+        <div id="hero">🐼</div>
+      </div>
+
+      <!-- chapter intro card (shown when a chapter starts) -->
+      <div id="scene-intro" class="hidden">
+        <div id="intro-emoji">🏡</div>
+        <p id="intro-text"></p>
+        <button id="btn-start-chapter" class="btn-big">🚀 Start! 开始!</button>
+      </div>
+
+      <!-- the speaking challenge -->
+      <div id="challenge" class="hidden">
+        <div id="card">
+          <div id="card-emoji">🐶</div>
+          <div id="card-hanzi">狗</div>
+          <div id="card-pinyin">gǒu</div>
+          <div id="card-en">dog</div>
+        </div>
+        <div id="feedback"></div>
+        <div id="controls">
+          <button id="btn-replay" class="btn-round" title="Hear it again">🔊</button>
+          <button id="btn-mic" class="btn-mic">🎤</button>
+          <button id="btn-helper-yes" class="btn-big hidden">⭐ 她说了! She said it!</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STICKER BOOK ============ -->
+    <section id="screen-stickers" class="screen hidden">
+      <header class="top-bar">
+        <button class="btn-icon" id="btn-stickers-back">🔙</button>
+        <h2>📖 My Stickers 我的贴纸</h2>
+        <div class="star-hud">⭐ <span class="star-count">0</span></div>
+      </header>
+      <div id="sticker-sections"></div>
+    </section>
+
+    <!-- ============ CELEBRATION OVERLAY ============ -->
+    <div id="celebrate" class="overlay hidden">
+      <div class="celebrate-box">
+        <div id="celebrate-hero" class="dance">🐼</div>
+        <h2 id="celebrate-title">🎉 太棒了! 🎉</h2>
+        <p id="celebrate-text"></p>
+        <div id="celebrate-sticker"></div>
+        <button id="btn-celebrate-next" class="btn-big">➡️ Onward! 继续!</button>
+      </div>
+    </div>
+
+    <div id="confetti-layer"></div>
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <!-- Plain scripts (no modules) so the game works when opened via file:// -->
+  <script src="js/data.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/match.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

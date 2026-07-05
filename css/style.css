@@ -1,0 +1,494 @@
+/* ============================================================
+   说中文大冒险 — Chinese Speaking Quest
+   Kid theme: big, bright, bouncy. Min touch target 72px.
+   ============================================================ */
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Comic Sans MS", "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(180deg, #7ec8f7 0%, #bdeaff 55%, #b8f0b0 100%);
+  user-select: none;
+  overflow: hidden;
+}
+
+#app { height: 100%; display: flex; flex-direction: column; }
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- shared bits ---------- */
+
+/* Picture avatars (e.g. Red Pandy) — sized in em so they match the emoji
+   they replace wherever they appear (title, tiles, scene, cards). */
+.hero-img {
+  height: 1.15em;
+  width: 1.15em;
+  object-fit: contain;
+  vertical-align: -0.18em;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25));
+}
+
+.top-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.top-bar h2 {
+  flex: 1;
+  text-align: center;
+  margin: 6px 0;
+  color: #2b4a6f;
+  font-size: 1.4rem;
+  text-shadow: 0 2px 0 rgba(255,255,255,.6);
+}
+
+.star-hud {
+  background: #fff8dc;
+  border: 3px solid #ffc93c;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #b8860b;
+  min-width: 84px;
+  text-align: center;
+  box-shadow: 0 3px 0 #e8b923;
+}
+.star-hud.pop { animation: star-pop .5s ease; }
+
+.btn-icon {
+  min-width: 72px;
+  min-height: 60px;
+  font-size: 1.6rem;
+  border: none;
+  border-radius: 18px;
+  background: #ffffffcc;
+  box-shadow: 0 4px 0 #c9d8e8;
+  cursor: pointer;
+}
+.btn-icon:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9d8e8; }
+
+.btn-big {
+  min-height: 76px;
+  padding: 14px 36px;
+  font-size: 1.6rem;
+  font-family: inherit;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(180deg, #ff9f43, #ff7f11);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 #d96a00, 0 10px 18px rgba(0,0,0,.15);
+  cursor: pointer;
+  transition: transform .1s;
+}
+.btn-big:active { transform: translateY(4px); box-shadow: 0 2px 0 #d96a00; }
+
+.btn-chip {
+  min-height: 60px;
+  padding: 10px 22px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: bold;
+  color: #2b4a6f;
+  background: #ffffffd9;
+  border: 3px solid #9fd0f5;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 #9fd0f5;
+  cursor: pointer;
+}
+.btn-chip:active { transform: translateY(3px); box-shadow: 0 1px 0 #9fd0f5; }
+
+.bottom-bar { display: flex; gap: 14px; padding: 14px 0 8px; flex-wrap: wrap; justify-content: center; }
+
+/* ---------- title screen ---------- */
+
+#screen-title { justify-content: center; text-align: center; gap: 8px; }
+
+.title-heroes { font-size: 5rem; display: flex; gap: 18px; }
+.title-hero { display: inline-block; }
+.bounce1 { animation: idle-bounce 1.6s ease-in-out infinite; }
+.bounce2 { animation: idle-bounce 1.6s ease-in-out .25s infinite; }
+.bounce3 { animation: idle-bounce 1.6s ease-in-out .5s infinite; }
+
+#game-title {
+  margin: 6px 0 0;
+  font-size: 3.2rem;
+  color: #e2574c;
+  text-shadow: 3px 3px 0 #fff, 5px 5px 0 rgba(0,0,0,.08);
+}
+.subtitle { margin: 0; color: #2b4a6f; font-size: 1.5rem; }
+.tagline { color: #3d5a80; font-size: 1.1rem; margin: 8px 0 20px; }
+
+.btn-play { font-size: 2rem; padding: 18px 52px; }
+
+.parent-note {
+  margin-top: 26px;
+  font-size: .85rem;
+  color: #55708c;
+  max-width: 480px;
+  min-height: 1.2em;
+}
+
+/* ---------- story select ---------- */
+
+#story-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 560px;
+  padding: 14px 0;
+}
+
+.story-tile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 22px;
+  min-height: 108px;
+  border: none;
+  border-radius: 26px;
+  background: #ffffffe6;
+  box-shadow: 0 6px 0 rgba(0,0,0,.1);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: transform .1s;
+}
+.story-tile:active { transform: translateY(4px) scale(.99); box-shadow: 0 2px 0 rgba(0,0,0,.1); }
+.story-tile .tile-emoji { font-size: 3.6rem; }
+.story-tile .tile-title { font-size: 1.5rem; font-weight: bold; color: #2b4a6f; margin: 0; }
+.story-tile .tile-sub { font-size: 1rem; color: #55708c; margin: 2px 0 0; }
+.story-tile .tile-progress { margin-left: auto; font-size: 1.05rem; font-weight: bold; color: #b8860b; white-space: nowrap; }
+
+/* ---------- chapter map ---------- */
+
+.map-tagline { color: #3d5a80; margin: 4px 0 10px; text-align: center; }
+
+#map-path {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  max-width: 640px;
+  padding: 10px 0 20px;
+}
+
+.chapter-btn {
+  width: 150px;
+  min-height: 150px;
+  border: none;
+  border-radius: 24px;
+  background: #ffffffe6;
+  box-shadow: 0 6px 0 rgba(0,0,0,.12);
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  transition: transform .1s;
+}
+.chapter-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.chapter-btn .ch-emoji { font-size: 3rem; }
+.chapter-btn .ch-title { font-size: 1.15rem; font-weight: bold; color: #2b4a6f; }
+.chapter-btn .ch-sub { font-size: .85rem; color: #55708c; }
+.chapter-btn .ch-done { font-size: 1rem; }
+.chapter-btn.locked { filter: grayscale(1); opacity: .55; cursor: default; }
+.chapter-btn.done { border: 3px solid #ffc93c; }
+
+/* ---------- game scene ---------- */
+
+/* Scrollable so the mic / "she said it" button is ALWAYS reachable, even
+   when a long finale phrase makes the card tall on a small screen. */
+#screen-scene { padding: 8px 10px 20px; overflow-y: auto; }
+.scene-bar h2 { font-size: 1.2rem; }
+
+#scene-stage {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  height: 26vh;
+  min-height: 150px;
+  flex-shrink: 0; /* keep its size; never squash the card/button off screen */
+  border-radius: 26px;
+  margin-top: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,.5), 0 6px 14px rgba(0,0,0,.12);
+}
+
+#stage-deco {
+  position: absolute;
+  inset: 0;
+  font-size: 3rem;
+  opacity: .45;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 16px;
+  pointer-events: none;
+}
+
+#hero {
+  position: absolute;
+  left: 18px;
+  bottom: 10px;
+  font-size: 4rem;
+  animation: idle-bounce 2s ease-in-out infinite;
+}
+#hero.jump { animation: hero-jump .7s ease; }
+#hero.think { animation: head-tilt 1s ease; }
+
+#tableau {
+  position: absolute;
+  left: 110px;
+  right: 12px;
+  bottom: 8px;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 6px;
+  align-items: flex-end;
+  font-size: 2.6rem;
+}
+.tableau-item { animation: pop-in .55s cubic-bezier(.2, 1.6, .4, 1); }
+
+/* intro card */
+#scene-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  text-align: center;
+}
+#intro-emoji { font-size: 4.5rem; }
+#intro-text { font-size: 1.25rem; color: #2b4a6f; max-width: 520px; margin: 0; }
+
+/* challenge card */
+#challenge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+#card {
+  background: #fffffff2;
+  border-radius: 26px;
+  box-shadow: 0 6px 0 rgba(0,0,0,.1);
+  padding: 12px 40px 16px;
+  text-align: center;
+  min-width: 300px;
+}
+#card.success { animation: card-glow 1s ease; }
+#card-emoji { font-size: 5.5rem; line-height: 1.15; }
+#card-hanzi { font-size: 2.6rem; color: #2b4a6f; font-weight: bold; }
+#card-pinyin { font-size: 1.9rem; color: #e2574c; font-weight: bold; }
+#card-en { font-size: 1.1rem; color: #55708c; }
+
+#feedback {
+  min-height: 1.6em;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2b8a3e;
+  text-align: center;
+}
+#feedback.oops { color: #b06a00; }
+
+#controls { display: flex; align-items: center; gap: 22px; padding-bottom: 10px; }
+
+.btn-round {
+  width: 76px;
+  height: 76px;
+  font-size: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 5px 0 #c9d8e8;
+  cursor: pointer;
+}
+.btn-round:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9d8e8; }
+
+.btn-mic {
+  width: 110px;
+  height: 110px;
+  font-size: 3.2rem;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff6b81, #ee5253);
+  box-shadow: 0 7px 0 #c0392b, 0 10px 20px rgba(0,0,0,.2);
+  cursor: pointer;
+  animation: mic-pulse 1.6s ease-in-out infinite;
+}
+.btn-mic:active { transform: translateY(4px); box-shadow: 0 2px 0 #c0392b; }
+.btn-mic.listening {
+  background: linear-gradient(180deg, #26de81, #20bf6b);
+  box-shadow: 0 7px 0 #0e8a4d;
+  animation: listening-glow .8s ease-in-out infinite;
+}
+.btn-mic:disabled { opacity: .6; animation: none; }
+
+/* ---------- sticker book ---------- */
+
+#sticker-sections { width: 100%; max-width: 640px; padding-bottom: 24px; }
+.sticker-section h3 { color: #2b4a6f; margin: 18px 4px 8px; font-size: 1.25rem; }
+.sticker-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.sticker {
+  width: 96px;
+  height: 96px;
+  font-size: 3rem;
+  border: none;
+  border-radius: 22px;
+  background: #ffffffe6;
+  box-shadow: 0 5px 0 rgba(0,0,0,.1);
+  cursor: pointer;
+}
+.sticker:active { transform: translateY(3px); }
+.sticker.earned { border: 3px solid #ffc93c; }
+.sticker.mystery { filter: grayscale(1); opacity: .45; font-size: 2.4rem; cursor: default; }
+
+/* ---------- celebration overlay ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 74, 111, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.celebrate-box {
+  background: linear-gradient(180deg, #fffbe8, #ffe9c2);
+  border-radius: 32px;
+  padding: 26px 40px 30px;
+  text-align: center;
+  max-width: 520px;
+  margin: 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  animation: pop-in .5s cubic-bezier(.2, 1.6, .4, 1);
+}
+#celebrate-hero { font-size: 5rem; }
+#celebrate-hero.dance { animation: dance .6s ease-in-out infinite; }
+#celebrate-title { color: #e2574c; margin: 8px 0; font-size: 2rem; }
+#celebrate-text { color: #2b4a6f; font-size: 1.2rem; margin: 4px 0 12px; }
+#celebrate-sticker { font-size: 4rem; min-height: 1.1em; animation: pop-in .8s .3s cubic-bezier(.2, 1.6, .4, 1) both; }
+
+/* ---------- confetti & toast ---------- */
+
+#confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 99; overflow: hidden; }
+
+.confetto {
+  position: absolute;
+  top: -50px;
+  animation: confetti-fall 1.6s ease-in forwards;
+}
+
+#toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2b4a6fee;
+  color: #fff;
+  padding: 12px 26px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  z-index: 60;
+  max-width: 90vw;
+  text-align: center;
+}
+
+/* ---------- animations ---------- */
+
+@keyframes idle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes hero-jump {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-46px) rotate(-8deg); }
+  70% { transform: translateY(0); }
+  85% { transform: translateY(-14px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes head-tilt {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-14deg); }
+  60% { transform: rotate(10deg); }
+}
+
+@keyframes mic-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@keyframes listening-glow {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.12); filter: brightness(1.15); }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes star-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) rotate(-6deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes card-glow {
+  0% { box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+  40% { box-shadow: 0 0 34px 10px #ffd93c; }
+  100% { box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(540deg); opacity: .8; }
+}
+
+@keyframes dance {
+  0%, 100% { transform: rotate(-10deg) translateY(0); }
+  50% { transform: rotate(10deg) translateY(-14px); }
+}
+
+/* small / short screens — compact the scene so the card AND the button below
+   it both fit without needing to scroll (long finale phrases are the tall case) */
+@media (max-height: 760px) {
+  #card-emoji { font-size: 3.6rem; }
+  #card-hanzi { font-size: 2.1rem; }
+  #card-pinyin { font-size: 1.5rem; }
+  #card { padding: 8px 28px 12px; }
+  #challenge { gap: 6px; padding-top: 4px; }
+  #controls { gap: 16px; padding-bottom: 4px; }
+  #scene-stage { height: 22vh; min-height: 120px; }
+  .btn-mic { width: 88px; height: 88px; font-size: 2.6rem; }
+  .btn-round { width: 64px; height: 64px; font-size: 1.6rem; }
+  #btn-helper-yes { min-height: 62px; padding: 10px 22px; font-size: 1.2rem; }
+}
