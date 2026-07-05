@@ -15,7 +15,14 @@ html, body {
   overflow: hidden;
 }
 
-#app { height: 100%; display: flex; flex-direction: column; }
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* keep content clear of the status bar / notch when launched fullscreen */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
 .screen {
   flex: 1;

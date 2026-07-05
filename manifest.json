@@ -1,0 +1,16 @@
+{
+  "name": "说中文大冒险 · Chinese Speaking Quest",
+  "short_name": "Chinese Quest",
+  "description": "A kid-friendly game for learning to speak Mandarin.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#7ec8f7",
+  "theme_color": "#7ec8f7",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
