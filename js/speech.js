@@ -34,13 +34,14 @@ window.Speech = (function () {
     synth.onvoiceschanged = pickVoices;
   }
 
-  function speak(text, lang, voice, rate, pitch) {
-    if (!synth || !text) return;
+  function speak(text, lang, voice, rate, pitch, onend) {
+    if (!synth || !text) { if (onend) setTimeout(onend, 0); return; }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
     if (voice) u.voice = voice;
     u.rate = rate;
     u.pitch = pitch;
+    if (onend) u.onend = onend; // fires when this line finishes speaking
     synth.speak(u); // queues after anything already speaking
   }
 
@@ -53,10 +54,11 @@ window.Speech = (function () {
       };
     },
 
-    /** Speak Mandarin slowly and clearly (the model pronunciation). */
-    speakZh(text, rate) {
+    /** Speak Mandarin slowly and clearly (the model pronunciation).
+        Pass onend to run something once this line finishes (e.g. auto-listen). */
+    speakZh(text, rate, onend) {
       if (!zhVoiceCache) pickVoices(); // voices may arrive late
-      speak(text, 'zh-CN', zhVoiceCache, rate || 0.8, 1.05);
+      speak(text, 'zh-CN', zhVoiceCache, rate || 0.8, 1.05, onend);
     },
 
     /** Speak a short English helper phrase. */

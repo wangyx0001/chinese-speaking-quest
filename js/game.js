@@ -39,6 +39,8 @@ window.Game = (function () {
     sttAvailable: true,
     praiseIdx: 0,
     retryIdx: 0,
+    presentId: 0,   // bumps every new card; invalidates a pending auto-listen
+    autoTimer: null, // timer that auto-starts the mic after the word is read
   };
 
   /* ---------------- helpers ---------------- */
@@ -120,6 +122,28 @@ window.Game = (function () {
         g.connect(audioCtx.destination);
         o.start(t);
         o.stop(t + 0.55);
+      });
+    } catch (e) { /* no sound? no problem */ }
+  }
+
+  // A soft two-note "your turn!" chirp played right before the mic auto-opens,
+  // so she knows it's time to speak even if she can't read "Listening".
+  function listenCue() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      [587.33, 880].forEach((f, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        const t = audioCtx.currentTime + i * 0.11;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.start(t);
+        o.stop(t + 0.15);
       });
     } catch (e) { /* no sound? no problem */ }
   }
@@ -236,6 +260,8 @@ window.Game = (function () {
   }
 
   function present() {
+    state.presentId++;               // new card — cancel any pending auto-listen
+    if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     const item = current();
     $('#card-emoji').innerHTML = heroHTML(item);
     $('#card-hanzi').textContent = item.hanzi;
@@ -253,11 +279,44 @@ window.Game = (function () {
       Speech.speakZh(isFinale() ? '魔法句子！跟我说：' : '跟我说：');
     }
     Speech.speakZh(item.hanzi);
-    Speech.speakZh(item.hanzi, 0.7); // second time extra slow
+    // When the word finishes being read, start the mic automatically so she
+    // never has to press a button. onend is the trigger; the timer is a
+    // safety net for browsers where the speech 'end' event is unreliable.
+    const pid = state.presentId;
+    Speech.speakZh(item.hanzi, 0.7, function () { scheduleAutoListen(pid); }); // 2nd time, extra slow
+    armAutoFallback(pid);
   }
 
-  function startListening() {
+  function armAutoFallback(pid) {
+    if (state.autoTimer) clearTimeout(state.autoTimer);
+    state.autoTimer = setTimeout(function () { autoListen(pid); }, 6000);
+  }
+
+  function scheduleAutoListen(pid) {
+    if (pid !== state.presentId) return;
+    if (state.autoTimer) clearTimeout(state.autoTimer);
+    // small pause after the word so it feels natural and the mic doesn't
+    // catch the tail of the speech
+    state.autoTimer = setTimeout(function () { autoListen(pid); }, 350);
+  }
+
+  function autoListen(pid) {
+    state.autoTimer = null;
+    if (pid !== state.presentId) return;               // already on another card
+    if (state.helper || !state.sttAvailable) return;   // helper mode: parent taps
+    if (state.busy || state.listening) return;         // already handling / listening
+    if ($('#screen-scene').classList.contains('hidden')) return; // left the scene
+    if ($('#challenge').classList.contains('hidden')) return;    // not on a challenge
+    listenCue(); // a gentle "your turn!" chirp
+    setTimeout(function () {
+      if (pid !== state.presentId || state.busy || state.listening) return;
+      startListening(true);
+    }, 280);
+  }
+
+  function startListening(auto) {
     if (state.busy || state.listening) return;
+    if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     Speech.stop(); // never let the game hear itself
     state.listening = true;
     const token = state.listenToken;
@@ -272,19 +331,22 @@ window.Game = (function () {
         state.listening = false;
         mic.classList.remove('listening');
         mic.textContent = '🎤';
-        handleResult(result);
+        handleResult(result, auto === true);
       },
     });
   }
 
-  function handleResult(result) {
+  function handleResult(result, auto) {
     // ---- errors that aren't her fault ----
-    if (result.error === 'not-allowed' || result.error === 'service-not-allowed') {
+    if (result.error === 'not-allowed' || result.error === 'service-not-allowed' ||
+        result.error === 'unsupported' || result.error === 'start-failed') {
+      // Auto-start can be blocked until she taps once (Safari/iOS require a tap
+      // to open the mic). Don't punish or switch modes — just invite one tap.
+      if (auto) {
+        feedback('👆 Tap the 🎤 and say it! 点一下话筒!', true);
+        return;
+      }
       enableHelper('The microphone is blocked, so Parent Helper Mode is on — tap ⭐ when she says the word!');
-      return;
-    }
-    if (result.error === 'unsupported' || result.error === 'start-failed') {
-      enableHelper('Speech listening is not available here — Parent Helper Mode is on!');
       return;
     }
     if (result.error === 'network') {
@@ -334,7 +396,10 @@ window.Game = (function () {
       feedback(line.en, true);
       Speech.speakZh(line.zh);
     }
-    Speech.speakZh(current().hanzi);
+    // replay the word, then auto-open the mic again so she can just try again
+    const pid = state.presentId;
+    Speech.speakZh(current().hanzi, undefined, function () { scheduleAutoListen(pid); });
+    armAutoFallback(pid);
   }
 
   function award(stars, rainbow) {
@@ -452,6 +517,8 @@ window.Game = (function () {
   /* ---------------- wiring & boot ---------------- */
 
   function leaveScene(to) {
+    state.presentId++;   // invalidate any pending auto-listen
+    if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     state.listenToken++; // ignore any in-flight recognition
     state.listening = false;
     state.busy = false;
@@ -491,7 +558,7 @@ window.Game = (function () {
 
     $('#btn-start-chapter').addEventListener('click', startChallenges);
     $('#btn-replay').addEventListener('click', () => { if (!state.listening) playModel(false); });
-    $('#btn-mic').addEventListener('click', startListening);
+    $('#btn-mic').addEventListener('click', () => startListening(false));
 
     $('#btn-helper-yes').addEventListener('click', () => {
       if (state.busy) return;
