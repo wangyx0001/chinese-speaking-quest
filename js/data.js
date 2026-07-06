@@ -24,25 +24,25 @@ window.STORIES = [
   /* ==================== STORY 1: RED PANDY ==================== */
   {
     id: 'panda',
-    title: '潘迪回家',
+    title: '红熊猫回家',
     titleEn: 'Red Pandy Goes Home',
     tagline: 'Red Pandy is lost! Speak Chinese to help her travel home to Bamboo Mountain.',
     // img: a picture file in this folder used instead of the emoji everywhere
-    hero: { name: '潘迪', emoji: '🦝', img: 'redpanda icon.png' },
-    ending: { zh: '潘迪到家了！谢谢你！', en: 'Red Pandy made it home! The whole red panda family is together again — thanks to YOU!' },
+    hero: { name: '红熊猫', emoji: '🦝', img: 'redpanda icon.png' },
+    ending: { zh: '红熊猫到家了！谢谢你！', en: 'Red Pandy made it home! The whole red panda family is together again — thanks to YOU!' },
     chapters: [
       {
         id: 'panda-greetings',
         title: '你好村', titleEn: 'Hello Village', emoji: '🏡', sticker: '👋',
         bg: 'linear-gradient(180deg,#aee9ff,#d4f7c5)', deco: '🏡🌳',
-        intro: { en: 'Red Pandy meets friendly villagers! Say hello in Chinese to make friends for her.', zh: '潘迪遇到了友好的村民！说你好，帮她交朋友吧！' },
+        intro: { en: 'Red Pandy meets friendly villagers! Say hello in Chinese to make friends for her.', zh: '红熊猫遇到了友好的村民！说你好，帮她交朋友吧！' },
         words: [
           { hanzi: '你好', pinyin: 'nǐ hǎo', en: 'hello', emoji: '👋', also: [] },
           { hanzi: '谢谢', pinyin: 'xiè xie', en: 'thank you', emoji: '🙏', also: [] },
           { hanzi: '再见', pinyin: 'zài jiàn', en: 'goodbye', emoji: '🫡', also: ['在见'] },
           { hanzi: '请', pinyin: 'qǐng', en: 'please', emoji: '🤲', also: ['清', '情', '青'] },
           { hanzi: '好', pinyin: 'hǎo', en: 'good / OK', emoji: '👍', also: ['号', '郝'] },
-          { hanzi: '我是潘迪', pinyin: 'wǒ shì Pān dí', en: 'I am Red Pandy', emoji: '🦝', img: 'redpanda icon.png', also: ['潘迪', '我是', '胖迪', '盼盼'] },
+          { hanzi: '我是红熊猫', pinyin: 'wǒ shì hóng xióng māo', en: 'I am Red Pandy', emoji: '🦝', img: 'redpanda icon.png', also: ['红熊猫', '熊猫', '我是', '红'] },
         ],
         finale: { hanzi: '你好，谢谢你！', pinyin: 'nǐ hǎo, xiè xie nǐ!', en: 'Hello, thank you!', emoji: '🎉', also: ['你好', '谢谢'] },
       },
@@ -67,7 +67,7 @@ window.STORIES = [
         id: 'panda-colors',
         title: '彩虹桥', titleEn: 'Rainbow Bridge', emoji: '🌈', sticker: '🌈',
         bg: 'linear-gradient(180deg,#c8ecff,#e8d5ff)', deco: '🌈☁️',
-        intro: { en: 'The rainbow bridge lost its colors! Say each color in Chinese to paint it back so Red Pandy can cross.', zh: '彩虹桥没有颜色了！说出每个颜色，把桥画回来，潘迪才能过桥！' },
+        intro: { en: 'The rainbow bridge lost its colors! Say each color in Chinese to paint it back so Red Pandy can cross.', zh: '彩虹桥没有颜色了！说出每个颜色，把桥画回来，红熊猫才能过桥！' },
         words: [
           { hanzi: '红色', pinyin: 'hóng sè', en: 'red', emoji: '❤️', also: ['红'] },
           { hanzi: '橙色', pinyin: 'chéng sè', en: 'orange', emoji: '🧡', also: ['橙', '成色'] },
@@ -83,7 +83,7 @@ window.STORIES = [
         id: 'panda-numbers',
         title: '数字河', titleEn: 'Number River', emoji: '🌊', sticker: '🔟',
         bg: 'linear-gradient(180deg,#b3e5fc,#81d4fa)', deco: '🌊🐟',
-        intro: { en: 'Red Pandy must cross the river! Count in Chinese — every number makes a stepping stone appear.', zh: '潘迪要过河！一起数数，每个数字都会变出一块踏脚石！' },
+        intro: { en: 'Red Pandy must cross the river! Count in Chinese — every number makes a stepping stone appear.', zh: '红熊猫要过河！一起数数，每个数字都会变出一块踏脚石！' },
         words: [
           { hanzi: '一', pinyin: 'yī', en: 'one', emoji: '1️⃣', also: ['1', '衣', '医'] },
           { hanzi: '二', pinyin: 'èr', en: 'two', emoji: '2️⃣', also: ['2', '儿'] },
@@ -102,7 +102,7 @@ window.STORIES = [
         id: 'panda-food',
         title: '大市场', titleEn: 'Big Market', emoji: '🧺', sticker: '🍎',
         bg: 'linear-gradient(180deg,#ffe0b2,#ffccbc)', deco: '🏪🍉',
-        intro: { en: 'Red Pandy is SO hungry! Order yummy food in Chinese to fill her picnic basket.', zh: '潘迪好饿呀！点好吃的，装满她的野餐篮子！' },
+        intro: { en: 'Red Pandy is SO hungry! Order yummy food in Chinese to fill her picnic basket.', zh: '红熊猫好饿呀！点好吃的，装满她的野餐篮子！' },
         words: [
           { hanzi: '苹果', pinyin: 'píng guǒ', en: 'apple', emoji: '🍎', also: ['苹', '平果'] },
           { hanzi: '香蕉', pinyin: 'xiāng jiāo', en: 'banana', emoji: '🍌', also: ['香', '蕉'] },
@@ -135,7 +135,7 @@ window.STORIES = [
         id: 'panda-describe',
         title: '描述一下', titleEn: 'Describe It', emoji: '🔍', sticker: '🖼️',
         bg: 'linear-gradient(180deg,#d7f0ff,#ffe9c7)', deco: '🔍🌼',
-        intro: { en: 'On the way home, Red Pandy sees so many things! Describe them in Chinese — now with two words together.', zh: '回家的路上，潘迪看到好多东西！用中文说一说，这次要说两个词哦！' },
+        intro: { en: 'On the way home, Red Pandy sees so many things! Describe them in Chinese — now with two words together.', zh: '回家的路上，红熊猫看到好多东西！用中文说一说，这次要说两个词哦！' },
         words: [
           { hanzi: '大狗', pinyin: 'dà gǒu', en: 'big dog', emoji: '🐕', also: ['狗', '大'] },
           { hanzi: '小猫', pinyin: 'xiǎo māo', en: 'little cat', emoji: '🐱', also: ['猫', '小'] },
@@ -148,9 +148,9 @@ window.STORIES = [
       },
       {
         id: 'panda-speaks',
-        title: '潘迪说话', titleEn: 'Red Pandy Speaks', emoji: '💬', sticker: '💬',
+        title: '红熊猫说话', titleEn: 'Red Pandy Speaks', emoji: '💬', sticker: '💬',
         bg: 'linear-gradient(180deg,#ffe0ec,#e5f5c7)', deco: '💬🌟',
-        intro: { en: 'Almost home! Red Pandy talks with the travelers she meets — in whole sentences now. You can do it!', zh: '快到家了！潘迪和路上的朋友聊天——这次要说一整句话啦！你可以的！' },
+        intro: { en: 'Almost home! Red Pandy talks with the travelers she meets — in whole sentences now. You can do it!', zh: '快到家了！红熊猫和路上的朋友聊天——这次要说一整句话啦！你可以的！' },
         words: [
           { hanzi: '我爱吃苹果', pinyin: 'wǒ ài chī píng guǒ', en: 'I love eating apples', emoji: '🍎', also: ['苹果', '爱吃', '我爱'] },
           { hanzi: '今天太阳很好', pinyin: 'jīn tiān tài yáng hěn hǎo', en: 'the sun is nice today', emoji: '☀️', also: ['太阳', '今天', '很好'] },
@@ -164,7 +164,7 @@ window.STORIES = [
         id: 'panda-family',
         title: '竹子山', titleEn: 'Bamboo Mountain', emoji: '🎋', sticker: '🏠',
         bg: 'linear-gradient(180deg,#c8e6c9,#a5d6a7)', deco: '🎋🎍',
-        intro: { en: 'Red Pandy is home! Call each family member out of the bamboo for the biggest red panda hug ever.', zh: '潘迪到家啦！把每个家人叫出来，抱一个大大的抱抱！' },
+        intro: { en: 'Red Pandy is home! Call each family member out of the bamboo for the biggest red panda hug ever.', zh: '红熊猫到家啦！把每个家人叫出来，抱一个大大的抱抱！' },
         words: [
           { hanzi: '妈妈', pinyin: 'mā ma', en: 'mom', emoji: '👩', also: ['马', '吗'] },
           { hanzi: '爸爸', pinyin: 'bà ba', en: 'dad', emoji: '👨', also: ['八', '吧'] },

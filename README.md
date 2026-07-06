@@ -1,7 +1,7 @@
 # 说中文大冒险 · Chinese Speaking Quest
 
 A speaking game for kids learning Mandarin. Help three heroes — Red Pandy the
-red panda (潘迪), Skye of the Puppy Rescue Squad (天天), and the Little
+red panda (红熊猫), Skye of the Puppy Rescue Squad (天天), and the Little
 Princess (小公主) — by **saying Chinese words out loud**. The game speaks each word, listens through the microphone, and
 celebrates every attempt with stars, confetti, and stickers. She can never get
 stuck: after three tries she always passes with a rainbow star.
