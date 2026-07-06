@@ -568,6 +568,12 @@ window.Game = (function () {
       show('story');
     });
 
+    // How to Play overlay (open from title, close with the button or backdrop)
+    const howto = $('#howto');
+    $('#btn-howto').addEventListener('click', () => howto.classList.remove('hidden'));
+    $('#btn-howto-close').addEventListener('click', () => howto.classList.add('hidden'));
+    howto.addEventListener('click', (e) => { if (e.target === howto) howto.classList.add('hidden'); });
+
     $('#btn-story-back').addEventListener('click', () => show('title'));
     $('#btn-map-back').addEventListener('click', () => show('story'));
     $('#btn-scene-back').addEventListener('click', () => leaveScene('map'));
