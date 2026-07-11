@@ -13,18 +13,28 @@ window.Game = (function () {
   const $$ = (s) => document.querySelectorAll(s);
 
   const PRAISE = [
-    { zh: '太棒了！', en: 'Wonderful!' },
-    { zh: '真厉害！', en: 'Amazing!' },
-    { zh: '好极了！', en: 'Great job!' },
-    { zh: '你真棒！', en: "You're a star!" },
-    { zh: '完美！', en: 'Perfect!' },
+    { zh: '太棒了！', en: 'Wonderful!', audio: 'audio/core/praise-1.wav' },
+    { zh: '真厉害！', en: 'Amazing!', audio: 'audio/core/praise-2.wav' },
+    { zh: '好极了！', en: 'Great job!', audio: 'audio/core/praise-3.wav' },
+    { zh: '你真棒！', en: "You're a star!", audio: 'audio/core/praise-4.wav' },
+    { zh: '完美！', en: 'Perfect!', audio: 'audio/core/praise-5.wav' },
   ];
   // en is shown on screen; zh is what the game says out loud
   const RETRY_LINES = [
-    { en: 'So close! Listen one more time…', zh: '差一点！再听一遍……' },
-    { en: 'Good try! Hear it again…', zh: '说得不错！再听一次……' },
-    { en: 'Almost! One more listen…', zh: '就差一点点！再听一遍……' },
+    { en: 'So close! Listen one more time…', zh: '差一点！再听一遍……', audio: 'audio/core/retry-1.wav' },
+    { en: 'Good try! Hear it again…', zh: '说得不错！再听一次……', audio: 'audio/core/retry-2.wav' },
+    { en: 'Almost! One more listen…', zh: '就差一点点！再听一遍……', audio: 'audio/core/retry-3.wav' },
   ];
+
+  // Shared engine phrases spoken across every story — recording these once
+  // benefits all stories, not just the panda trial.
+  const CORE_AUDIO = {
+    prompt: 'audio/core/prompt.wav',
+    promptFinale: 'audio/core/prompt-finale.wav',
+    effortPraise: 'audio/core/effort-praise.wav',
+    heardNothing: 'audio/core/heard-nothing.wav',
+    launch: 'audio/core/launch.wav',
+  };
 
   const state = {
     story: null,
@@ -264,7 +274,7 @@ window.Game = (function () {
     show('scene');
 
     Speech.stop();
-    Speech.speakZh(ch.intro.zh);
+    Speech.speakZh(ch.intro.zh, undefined, undefined, ch.intro.audioZh);
   }
 
   function startChallenges() {
@@ -301,14 +311,17 @@ window.Game = (function () {
     const item = current();
     Speech.stop();
     if (withPrompt) {
-      Speech.speakZh(isFinale() ? '魔法句子！跟我说：' : '跟我说：');
+      Speech.speakZh(
+        isFinale() ? '魔法句子！跟我说：' : '跟我说：',
+        undefined, undefined,
+        isFinale() ? CORE_AUDIO.promptFinale : CORE_AUDIO.prompt
+      );
     }
-    Speech.speakZh(item.hanzi);
-    // When the word finishes being read, start the mic automatically so she
+    // Read the word once; when it finishes, start the mic automatically so she
     // never has to press a button. onend is the trigger; the timer is a
     // safety net for browsers where the speech 'end' event is unreliable.
     const pid = state.presentId;
-    Speech.speakZh(item.hanzi, 0.7, function () { scheduleAutoListen(pid); }); // 2nd time, extra slow
+    Speech.speakZh(item.hanzi, undefined, function () { scheduleAutoListen(pid); }, item.audioZh);
     armAutoFallback(pid);
   }
 
@@ -410,7 +423,7 @@ window.Game = (function () {
       // effort pass — trying three times IS winning; the story always advances
       feedback('🌈 练习得真棒! Great practicing — keep going!');
       Speech.stop();
-      Speech.speakZh('练习得真棒！');
+      Speech.speakZh('练习得真棒！', undefined, undefined, CORE_AUDIO.effortPraise);
       award(1, true);
       return;
     }
@@ -418,15 +431,15 @@ window.Game = (function () {
     Speech.stop();
     if (heardNothing) {
       feedback("I didn't hear you — get close and say it big! 再试一次!", true);
-      Speech.speakZh('我没听到，再试一次！');
+      Speech.speakZh('我没听到，再试一次！', undefined, undefined, CORE_AUDIO.heardNothing);
     } else {
       const line = RETRY_LINES[state.retryIdx++ % RETRY_LINES.length];
       feedback(line.en, true);
-      Speech.speakZh(line.zh);
+      Speech.speakZh(line.zh, undefined, undefined, line.audio);
     }
     // replay the word, then auto-open the mic again so she can just try again
     const pid = state.presentId;
-    Speech.speakZh(current().hanzi, undefined, function () { scheduleAutoListen(pid); });
+    Speech.speakZh(current().hanzi, undefined, function () { scheduleAutoListen(pid); }, current().audioZh);
     armAutoFallback(pid);
   }
 
@@ -445,7 +458,7 @@ window.Game = (function () {
       const p = PRAISE[state.praiseIdx++ % PRAISE.length];
       feedback((stars === 2 ? '⭐⭐ ' : '⭐ ') + p.zh + ' ' + p.en);
       Speech.stop();
-      Speech.speakZh(p.zh);
+      Speech.speakZh(p.zh, undefined, undefined, p.audio);
     }
 
     // the story action: the word she spoke joins the scene
@@ -490,9 +503,9 @@ window.Game = (function () {
     chime(true);
     Speech.stop();
     if (lastChapter) {
-      Speech.speakZh(s.ending.zh);
+      Speech.speakZh(s.ending.zh, undefined, undefined, s.ending.audioZh);
     } else {
-      Speech.speakZh('太棒了！你完成了' + ch.title + '！你得到了一张新贴纸！');
+      Speech.speakZh('太棒了！你完成了' + ch.title + '！你得到了一张新贴纸！', undefined, undefined, ch.audioComplete);
     }
   }
 
@@ -531,7 +544,7 @@ window.Game = (function () {
           // sneaky review: tapping a sticker replays that chapter's magic phrase
           b.addEventListener('click', () => {
             Speech.stop();
-            Speech.speakZh(ch.finale.hanzi);
+            Speech.speakZh(ch.finale.hanzi, undefined, undefined, ch.finale.audioZh);
             toast(ch.finale.hanzi + ' — ' + ch.finale.pinyin);
           });
         }
@@ -564,7 +577,7 @@ window.Game = (function () {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch (e) { /* ok */ }
-      Speech.speakZh('出发！');
+      Speech.speakZh('选一个故事吧！', undefined, undefined, CORE_AUDIO.launch);
       show('story');
     });
 

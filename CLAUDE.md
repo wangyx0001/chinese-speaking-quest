@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A zero-build, static browser game that helps a young child (~6–8) learn to **speak** Mandarin. The player advances an illustrated story by saying Chinese words out loud; the Web Speech API reads each word (TTS) and listens to the child (speech recognition). All art is emoji/CSS plus three background-removed character photos — no external runtime assets. It is hosted on GitHub Pages and used on an iPad.
+A zero-build, static browser game that helps a young child (~6–8) learn to **speak** Mandarin. The player advances an illustrated story by saying Chinese words out loud; the Web Speech API reads each word (TTS) and listens to the child (speech recognition). All art is emoji/CSS plus three background-removed character photos. The "panda" story's Mandarin lines additionally have pre-generated `.wav` clips (a cloned human voice) under `audio/`, played instead of the system TTS voice when present — see "Voice clips" below. It is hosted on GitHub Pages and used on an iPad.
 
 ## Run / develop / deploy
 
@@ -17,7 +17,7 @@ A zero-build, static browser game that helps a young child (~6–8) learn to **s
 Plain `<script>` tags loaded in dependency order in `index.html` — **do NOT convert to ES modules**, because `import` breaks when the file is opened via `file://` (a supported way to run this). Each file attaches one global:
 
 - `js/data.js` → `window.STORIES` — all content (see below).
-- `js/speech.js` → `window.Speech` — TTS (`speakZh`/`speakEn`, both accept an optional `onend` callback) and recognition (`listen({timeoutMs, onDone})`). Picks a `zh-CN` voice, always `stop()`s before listening so the mic never hears the game.
+- `js/speech.js` → `window.Speech` — TTS (`speakZh`/`speakEn`, both accept an optional `onend` callback) and recognition (`listen({timeoutMs, onDone})`). `speakZh` also takes an optional `audioSrc` (a path from `data.js`/`game.js`) — if given, it plays that pre-recorded clip and transparently falls back to system TTS if the clip is missing or fails to play. Picks a `zh-CN` voice, always `stop()`s before listening so the mic never hears the game (this also stops any playing clip).
 - `js/match.js` → `window.Matcher` — pure, console-testable fuzzy matching.
 - `js/progress.js` → `window.Progress` — localStorage (`chineseQuest.v1`): global star count + per-story `{unlocked, done}`. `load()` self-repairs malformed/legacy saves so a bad value can't lock the game.
 - `js/game.js` → `window.Game` — the whole UI + a per-word state machine. **Fully data-driven**: one engine renders all stories/chapters from `STORIES`. Screens are hidden `<section>`s toggled by `show()`.
@@ -26,11 +26,16 @@ The single screen with `overflow-y: auto` is `#screen-scene` — it must stay sc
 
 ## Editing content
 
-`js/data.js` is the **only file to touch for content** (words, chapters, stories). Shape: `STORIES[] → { id, hero:{name,emoji,img?}, chapters[] }`; each chapter `→ { id, words[], finale, intro:{en,zh}, sticker, bg, deco }`; each word `→ { hanzi, pinyin, en, emoji, also[], img? }`.
+`js/data.js` is the **only file to touch for content** (words, chapters, stories). Shape: `STORIES[] → { id, hero:{name,emoji,img?}, ending:{en,zh,audioZh?}, chapters[] }`; each chapter `→ { id, words[], finale, intro:{en,zh,audioZh?}, audioComplete?, sticker, bg, deco }`; each word/finale `→ { hanzi, pinyin, en, emoji, also[], img?, audioZh? }`.
 
 - **Chapter `id`s must be unique within a story** (they key the `done` map) and **stable** (renaming an `id` orphans existing saved progress).
 - `also[]` = extra accepted transcripts for that word. Kid speech is mis-heard constantly; the game logs `[heard]` candidates to the console during play — grow `also[]` from real sessions. This is the main tuning loop.
 - `img` (on a hero or word) renders a picture instead of the emoji via `heroHTML()`. Referenced image files live at repo root. **Filenames are case-sensitive on GitHub Pages but not on Windows** — a case mismatch works locally then 404s when hosted, so keep `img:` values byte-exact. `.nojekyll` is required so Pages serves files with spaces in their names as-is.
+- `audioZh` (on a word, finale, chapter `intro`, or story `ending`) and `audioComplete` (on a chapter, for the "chapter finished" line) point to a pre-recorded clip under `audio/` — see "Voice clips" below. Optional: content without one just uses system TTS, so new words/stories work immediately without recording anything.
+
+## Voice clips
+
+The "panda" story's Mandarin audio is a **human voice recorded by the parent** instead of the robotic system TTS voice, committed as static `.wav` files under `audio/panda/` and `audio/core/`. `tools/audio-manifest.json` is the single source of truth for every `{file, text}` pair — keep it in sync with `data.js`/`game.js` if you add or rename an `audioZh`/`audio`/`audioComplete` reference. **Record clips with `tools/record.html`**: serve the site and open `http://localhost:8317/tools/record.html` in Chrome/Edge — it drives the manifest one line at a time, records the mic to 16-bit mono WAV in-browser (no ffmpeg/Python/npm), and uses the File System Access API to write each clip straight to its correct `audio/...` path (dodging the case-sensitivity trap), skipping clips already on disk so you can resume. WAV is used because it plays on iPad Safari; browser `MediaRecorder` webm/opus does not. The game itself never records or calls any API and still has no build step. `game.js` has its own `CORE_AUDIO` map plus `audio` fields on `PRAISE`/`RETRY_LINES` for the fixed engine phrases shared by all stories. Other stories (`pups`, `princess`) have no clips yet and keep speaking via system TTS — same mechanism extends to them later, just add manifest entries + record more `.wav` files.
 
 ## Design invariants (do not break these)
 

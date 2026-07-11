@@ -11,6 +11,17 @@ window.Speech = (function () {
   let zhVoiceCache = null;
   let enVoiceCache = null;
 
+  // ---- serial playback queue ----
+  // Every speakZh/speakEn call is queued and played one-at-a-time. The
+  // SpeechSynthesis engine already queues its own utterances, but recorded
+  // <audio> clips do NOT — without this queue, several speakZh() calls in a
+  // row (e.g. "跟我说：" + the word + the slow repeat) would all start at once
+  // and play on top of each other. The queue restores that in-order playback.
+  let queue = [];
+  let playing = false;
+  let gen = 0;            // bumped by stop(); invalidates any in-flight playback
+  let currentClip = null; // the <audio> clip currently playing, if any
+
   function pickVoices() {
     if (!synth) return;
     const voices = synth.getVoices();
@@ -34,15 +45,56 @@ window.Speech = (function () {
     synth.onvoiceschanged = pickVoices;
   }
 
-  function speak(text, lang, voice, rate, pitch, onend) {
-    if (!synth || !text) { if (onend) setTimeout(onend, 0); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang;
+  /** Speak one queue item via system TTS, calling done() when it finishes. */
+  function speakUtter(item, done) {
+    if (!synth || !item.text) { done(); return; }
+    if (!zhVoiceCache || !enVoiceCache) pickVoices(); // voices may arrive late
+    const u = new SpeechSynthesisUtterance(item.text);
+    u.lang = item.kind === 'en' ? 'en-US' : 'zh-CN';
+    const voice = item.kind === 'en' ? enVoiceCache : zhVoiceCache;
     if (voice) u.voice = voice;
-    u.rate = rate;
-    u.pitch = pitch;
-    if (onend) u.onend = onend; // fires when this line finishes speaking
-    synth.speak(u); // queues after anything already speaking
+    u.rate = item.rate || (item.kind === 'en' ? 1.0 : 0.8);
+    u.pitch = 1.05;
+    u.onend = done;
+    u.onerror = done; // never let a TTS error stall the queue
+    synth.speak(u);
+  }
+
+  /** Play one queue item: a pre-recorded clip if it has audioSrc, else TTS.
+      A missing/failed clip falls back to TTS for that same item. */
+  function playItem(item, done) {
+    if (!item.audioSrc) { speakUtter(item, done); return; }
+    const audio = new Audio(item.audioSrc);
+    audio.playbackRate = item.rate || 1; // clips are recorded at natural speed
+    currentClip = audio;
+    let settled = false;
+    const clearIfCurrent = () => { if (currentClip === audio) currentClip = null; };
+    audio.onended = () => { if (settled) return; settled = true; clearIfCurrent(); done(); };
+    const fallback = () => { if (settled) return; settled = true; clearIfCurrent(); speakUtter(item, done); };
+    audio.onerror = fallback;              // missing/corrupt file
+    audio.play().catch(fallback);          // autoplay blocked, etc.
+  }
+
+  /** Play the next queued item, then advance. Guards against stop() (gen) and
+      against a single item resolving twice (advanced). */
+  function runNext() {
+    if (!queue.length) { playing = false; return; }
+    playing = true;
+    const item = queue.shift();
+    const myGen = gen;
+    let advanced = false;
+    playItem(item, function () {
+      if (advanced) return;
+      advanced = true;
+      if (myGen !== gen) return;           // stop() happened mid-item — abandon
+      if (item.onend) { try { item.onend(); } catch (e) { /* keep going */ } }
+      runNext();
+    });
+  }
+
+  function enqueue(item) {
+    queue.push(item);
+    if (!playing) runNext();
   }
 
   return {
@@ -55,21 +107,30 @@ window.Speech = (function () {
     },
 
     /** Speak Mandarin slowly and clearly (the model pronunciation).
-        Pass onend to run something once this line finishes (e.g. auto-listen). */
-    speakZh(text, rate, onend) {
-      if (!zhVoiceCache) pickVoices(); // voices may arrive late
-      speak(text, 'zh-CN', zhVoiceCache, rate || 0.8, 1.05, onend);
+        Multiple calls play in order (queued). Pass onend to run something once
+        this line finishes (e.g. auto-listen). Pass audioSrc (a data.js
+        `audioZh`/`audio` path) to play a pre-recorded clip instead — it falls
+        back to system TTS if the clip is missing or fails. */
+    speakZh(text, rate, onend, audioSrc) {
+      enqueue({ kind: 'zh', text: text, rate: rate, onend: onend, audioSrc: audioSrc });
     },
 
-    /** Speak a short English helper phrase. */
+    /** Speak a short English helper phrase (queued like speakZh). */
     speakEn(text, rate) {
-      if (!enVoiceCache) pickVoices();
-      speak(text, 'en-US', enVoiceCache, rate || 1.0, 1.05);
+      enqueue({ kind: 'en', text: text, rate: rate });
     },
 
-    /** Stop all speech immediately (always call before opening the mic!). */
+    /** Stop all speech immediately (always call before opening the mic!).
+        Clears the queue and halts the current clip/utterance. */
     stop() {
+      gen++;              // invalidate any in-flight item's completion callback
+      queue = [];
+      playing = false;
       if (synth) synth.cancel();
+      if (currentClip) {
+        try { currentClip.pause(); currentClip.currentTime = 0; } catch (e) { /* already stopped */ }
+        currentClip = null;
+      }
     },
 
     /**
