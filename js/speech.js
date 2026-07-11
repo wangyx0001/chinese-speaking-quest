@@ -184,18 +184,21 @@ window.Speech = (function () {
         tap — e.g. the Play button). iOS Safari keeps an <audio> element "locked"
         until it is first played from a gesture; once primed, the SAME element
         can play any later clip with no further gesture. We prime by muting the
-        element and calling play()/pause() — silent to the user, and it counts as
-        the gesture-blessed first playback. Harmless to call more than once. */
+        element and calling play() — silent to the user, and it counts as the
+        gesture-blessed first playback. Harmless to call more than once.
+
+        IMPORTANT: this must NOT pause the element afterward. The game plays a
+        real clip (the launch phrase) on this same element in the very same tap,
+        right after unlock() returns; a deferred pause() here would clobber that
+        clip — it would stop mid-play and fall back to TTS. playItem() unmutes and
+        takes over the element itself, so priming only needs to unmute on settle. */
     unlock() {
       const el = getClipEl();
       if (!el) return;
       try {
         el.muted = true;
         const p = el.play();
-        const settle = function () {
-          try { el.pause(); } catch (e) { /* ignore */ }
-          el.muted = false;
-        };
+        const settle = function () { el.muted = false; };
         if (p && typeof p.then === 'function') p.then(settle, settle);
         else settle();
       } catch (e) { try { el.muted = false; } catch (e2) { /* ignore */ } }
