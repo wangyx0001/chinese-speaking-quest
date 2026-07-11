@@ -577,6 +577,7 @@ window.Game = (function () {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch (e) { /* ok */ }
+      Speech.unlock(); // unlock recorded-clip playback (needed for iOS Safari)
       Speech.speakZh('选一个故事吧！', undefined, undefined, CORE_AUDIO.launch);
       show('story');
     });

@@ -12,15 +12,54 @@ window.Speech = (function () {
   let enVoiceCache = null;
 
   // ---- serial playback queue ----
-  // Every speakZh/speakEn call is queued and played one-at-a-time. The
-  // SpeechSynthesis engine already queues its own utterances, but recorded
-  // <audio> clips do NOT — without this queue, several speakZh() calls in a
-  // row (e.g. "跟我说：" + the word + the slow repeat) would all start at once
-  // and play on top of each other. The queue restores that in-order playback.
+  // Every speakZh/speakEn call is queued and played one-at-a-time, so several
+  // calls in a row (e.g. the "跟我说：" prompt + the word) play in order rather
+  // than on top of each other.
+  //
+  // Recorded clips play through the Web Audio API (a single AudioContext), NOT
+  // via `new Audio()`. On iOS Safari a fresh <audio> element stays "locked"
+  // until it is played inside a user gesture, so a clip chained off the previous
+  // clip's `ended` event (not a gesture) is silently blocked — you'd hear only
+  // the first clip of each chapter. An AudioContext resumed once inside a gesture
+  // (see unlock(), called from the Play button) can start any decoded buffer for
+  // the rest of the session with no further gesture needed.
   let queue = [];
   let playing = false;
   let gen = 0;            // bumped by stop(); invalidates any in-flight playback
-  let currentClip = null; // the <audio> clip currently playing, if any
+
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let clipCtx = null;
+  const bufferCache = {}; // src -> decoded AudioBuffer, or 'failed'
+  let currentSource = null;
+
+  function getCtx() {
+    if (!clipCtx && AC) { try { clipCtx = new AC(); } catch (e) { clipCtx = null; } }
+    return clipCtx;
+  }
+
+  // Safari historically supports only the callback form of decodeAudioData;
+  // newer engines return a promise. Support both.
+  function decodeAudio(ctx, arrayBuf) {
+    return new Promise((resolve, reject) => {
+      let p;
+      try { p = ctx.decodeAudioData(arrayBuf, resolve, reject); } catch (e) { reject(e); return; }
+      if (p && typeof p.then === 'function') p.then(resolve, reject);
+    });
+  }
+
+  // Fetch + decode a clip once, then cache the AudioBuffer. Resolves null if the
+  // file is missing or won't decode (the caller then falls back to TTS).
+  function loadBuffer(src) {
+    if (bufferCache[src] === 'failed') return Promise.resolve(null);
+    if (bufferCache[src]) return Promise.resolve(bufferCache[src]);
+    const ctx = getCtx();
+    if (!ctx) return Promise.resolve(null);
+    return fetch(src)
+      .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
+      .then((ab) => decodeAudio(ctx, ab))
+      .then((buf) => { bufferCache[src] = buf; return buf; })
+      .catch(() => { bufferCache[src] = 'failed'; return null; });
+  }
 
   function pickVoices() {
     if (!synth) return;
@@ -60,19 +99,35 @@ window.Speech = (function () {
     synth.speak(u);
   }
 
-  /** Play one queue item: a pre-recorded clip if it has audioSrc, else TTS.
-      A missing/failed clip falls back to TTS for that same item. */
+  /** Play one queue item: a pre-recorded clip (via Web Audio) if it has
+      audioSrc, else TTS. A missing/failed clip falls back to TTS for that item. */
   function playItem(item, done) {
     if (!item.audioSrc) { speakUtter(item, done); return; }
-    const audio = new Audio(item.audioSrc);
-    audio.playbackRate = item.rate || 1; // clips are recorded at natural speed
-    currentClip = audio;
-    let settled = false;
-    const clearIfCurrent = () => { if (currentClip === audio) currentClip = null; };
-    audio.onended = () => { if (settled) return; settled = true; clearIfCurrent(); done(); };
-    const fallback = () => { if (settled) return; settled = true; clearIfCurrent(); speakUtter(item, done); };
-    audio.onerror = fallback;              // missing/corrupt file
-    audio.play().catch(fallback);          // autoplay blocked, etc.
+    const ctx = getCtx();
+    if (!ctx) { speakUtter(item, done); return; }   // no Web Audio → TTS
+    if (ctx.state === 'suspended') ctx.resume();     // best-effort; unlock() did the gesture
+    const startGen = gen;
+    loadBuffer(item.audioSrc).then((buf) => {
+      if (startGen !== gen) { done(); return; }      // stop() happened while loading — don't play
+      if (!buf) { speakUtter(item, done); return; }  // missing/corrupt clip → TTS fallback
+      let settled = false;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      if (item.rate) src.playbackRate.value = item.rate;
+      src.connect(ctx.destination);
+      currentSource = src;
+      src.onended = () => {
+        if (settled) return; settled = true;
+        if (currentSource === src) currentSource = null;
+        done();
+      };
+      try { src.start(0); }
+      catch (e) {
+        if (settled) return; settled = true;
+        if (currentSource === src) currentSource = null;
+        speakUtter(item, done);
+      }
+    });
   }
 
   /** Play the next queued item, then advance. Guards against stop() (gen) and
@@ -120,6 +175,14 @@ window.Speech = (function () {
       enqueue({ kind: 'en', text: text, rate: rate });
     },
 
+    /** Resume the audio context inside a user gesture (call from the first tap —
+        e.g. the Play button). Required so recorded clips can play on iOS Safari,
+        where audio must be unlocked by a gesture before it will play. */
+    unlock() {
+      const ctx = getCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+    },
+
     /** Stop all speech immediately (always call before opening the mic!).
         Clears the queue and halts the current clip/utterance. */
     stop() {
@@ -127,9 +190,9 @@ window.Speech = (function () {
       queue = [];
       playing = false;
       if (synth) synth.cancel();
-      if (currentClip) {
-        try { currentClip.pause(); currentClip.currentTime = 0; } catch (e) { /* already stopped */ }
-        currentClip = null;
+      if (currentSource) {
+        try { currentSource.onended = null; currentSource.stop(); } catch (e) { /* already stopped */ }
+        currentSource = null;
       }
     },
 
