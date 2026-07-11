@@ -16,49 +16,41 @@ window.Speech = (function () {
   // calls in a row (e.g. the "跟我说：" prompt + the word) play in order rather
   // than on top of each other.
   //
-  // Recorded clips play through the Web Audio API (a single AudioContext), NOT
-  // via `new Audio()`. On iOS Safari a fresh <audio> element stays "locked"
-  // until it is played inside a user gesture, so a clip chained off the previous
-  // clip's `ended` event (not a gesture) is silently blocked — you'd hear only
-  // the first clip of each chapter. An AudioContext resumed once inside a gesture
-  // (see unlock(), called from the Play button) can start any decoded buffer for
-  // the rest of the session with no further gesture needed.
+  // Recorded clips play through a SINGLE, reused HTMLAudioElement, NOT a fresh
+  // `new Audio()` per clip and NOT the Web Audio API. Why:
+  //   - A fresh `new Audio().play()` per clip is blocked on iOS Safari unless it
+  //     happens inside a user gesture. Clips chained off the previous clip's
+  //     `ended` event are not gestures, so only the first clip of a chapter
+  //     played — the original bug.
+  //   - Web Audio "fixed" the chaining but regressed to *no* sound on iOS: our
+  //     first real playback is async (after fetch + decodeAudioData), so it
+  //     starts long after the gesture ends and iOS never truly activates the
+  //     context; and separately, Web Audio output is silenced by the iPad's
+  //     hardware mute/ring switch, while an <audio> element is not.
+  //   - ONE <audio> element, "unlocked" once inside the Play-button gesture (see
+  //     unlock(): a muted play()/pause() primes it), can then play any clip for
+  //     the rest of the session just by swapping `.src` and calling `.play()`,
+  //     with no further gesture — and it plays regardless of the mute switch.
   let queue = [];
   let playing = false;
   let gen = 0;            // bumped by stop(); invalidates any in-flight playback
 
-  const AC = window.AudioContext || window.webkitAudioContext;
-  let clipCtx = null;
-  const bufferCache = {}; // src -> decoded AudioBuffer, or 'failed'
-  let currentSource = null;
+  // The one reused audio element for all recorded clips. Created lazily so this
+  // file has no side effects at load; primed once by unlock().
+  let clipEl = null;
+  let currentEl = null;  // the element mid-playback (for stop()); === clipEl or null
 
-  function getCtx() {
-    if (!clipCtx && AC) { try { clipCtx = new AC(); } catch (e) { clipCtx = null; } }
-    return clipCtx;
-  }
-
-  // Safari historically supports only the callback form of decodeAudioData;
-  // newer engines return a promise. Support both.
-  function decodeAudio(ctx, arrayBuf) {
-    return new Promise((resolve, reject) => {
-      let p;
-      try { p = ctx.decodeAudioData(arrayBuf, resolve, reject); } catch (e) { reject(e); return; }
-      if (p && typeof p.then === 'function') p.then(resolve, reject);
-    });
-  }
-
-  // Fetch + decode a clip once, then cache the AudioBuffer. Resolves null if the
-  // file is missing or won't decode (the caller then falls back to TTS).
-  function loadBuffer(src) {
-    if (bufferCache[src] === 'failed') return Promise.resolve(null);
-    if (bufferCache[src]) return Promise.resolve(bufferCache[src]);
-    const ctx = getCtx();
-    if (!ctx) return Promise.resolve(null);
-    return fetch(src)
-      .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
-      .then((ab) => decodeAudio(ctx, ab))
-      .then((buf) => { bufferCache[src] = buf; return buf; })
-      .catch(() => { bufferCache[src] = 'failed'; return null; });
+  function getClipEl() {
+    if (clipEl) return clipEl;
+    if (typeof Audio === 'undefined') return null;
+    try {
+      clipEl = new Audio();
+      clipEl.preload = 'auto';
+      // Keep it inline on iOS; never treat it as a fullscreen media player.
+      clipEl.setAttribute('playsinline', '');
+      clipEl.setAttribute('webkit-playsinline', '');
+    } catch (e) { clipEl = null; }
+    return clipEl;
   }
 
   function pickVoices() {
@@ -99,35 +91,48 @@ window.Speech = (function () {
     synth.speak(u);
   }
 
-  /** Play one queue item: a pre-recorded clip (via Web Audio) if it has
-      audioSrc, else TTS. A missing/failed clip falls back to TTS for that item. */
+  /** Play one queue item: a pre-recorded clip (via the reused <audio> element)
+      if it has audioSrc, else TTS. A missing/failed clip falls back to TTS for
+      that item, so the "clip present → play it; absent → TTS" contract holds. */
   function playItem(item, done) {
     if (!item.audioSrc) { speakUtter(item, done); return; }
-    const ctx = getCtx();
-    if (!ctx) { speakUtter(item, done); return; }   // no Web Audio → TTS
-    if (ctx.state === 'suspended') ctx.resume();     // best-effort; unlock() did the gesture
+    const el = getClipEl();
+    if (!el) { speakUtter(item, done); return; }    // no <audio> support → TTS
+
     const startGen = gen;
-    loadBuffer(item.audioSrc).then((buf) => {
-      if (startGen !== gen) { done(); return; }      // stop() happened while loading — don't play
-      if (!buf) { speakUtter(item, done); return; }  // missing/corrupt clip → TTS fallback
-      let settled = false;
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      if (item.rate) src.playbackRate.value = item.rate;
-      src.connect(ctx.destination);
-      currentSource = src;
-      src.onended = () => {
-        if (settled) return; settled = true;
-        if (currentSource === src) currentSource = null;
-        done();
-      };
-      try { src.start(0); }
-      catch (e) {
-        if (settled) return; settled = true;
-        if (currentSource === src) currentSource = null;
-        speakUtter(item, done);
-      }
-    });
+    let settled = false;
+
+    // Finish this item exactly once. `fell` = fall back to TTS for this item.
+    // We detach our handlers but do NOT pause here: on normal end there's
+    // nothing to pause, and on stop() the pause already happened in stop().
+    function finish(fell) {
+      if (settled) return; settled = true;
+      el.onended = null;
+      el.onerror = null;
+      if (currentEl === el) currentEl = null;
+      if (startGen !== gen) { done(); return; }     // stop() happened — just settle the item
+      if (fell) { speakUtter(item, done); return; } // missing/failed clip → TTS fallback
+      done();
+    }
+
+    el.onended = function () { finish(false); };
+    el.onerror = function () { finish(true); };      // 404 / decode error / etc. → TTS
+
+    currentEl = el;
+    el.muted = false;
+    el.playbackRate = item.rate || 1;
+    try { el.pause(); } catch (e) { /* ignore */ }
+    // Setting src to the same value won't reload; force a fresh load each item.
+    el.src = item.audioSrc;
+    try { el.currentTime = 0; } catch (e) { /* not ready yet; fine */ }
+
+    let p;
+    try { p = el.play(); } catch (e) { finish(true); return; }
+    // play() rejects on iOS if the gesture unlock didn't take, or on decode
+    // errors — fall back to TTS so the child is never left in silence.
+    if (p && typeof p.catch === 'function') {
+      p.catch(function () { finish(true); });
+    }
   }
 
   /** Play the next queued item, then advance. Guards against stop() (gen) and
@@ -175,24 +180,43 @@ window.Speech = (function () {
       enqueue({ kind: 'en', text: text, rate: rate });
     },
 
-    /** Resume the audio context inside a user gesture (call from the first tap —
-        e.g. the Play button). Required so recorded clips can play on iOS Safari,
-        where audio must be unlocked by a gesture before it will play. */
+    /** Prime recorded-clip playback inside a user gesture (call from the first
+        tap — e.g. the Play button). iOS Safari keeps an <audio> element "locked"
+        until it is first played from a gesture; once primed, the SAME element
+        can play any later clip with no further gesture. We prime by muting the
+        element and calling play()/pause() — silent to the user, and it counts as
+        the gesture-blessed first playback. Harmless to call more than once. */
     unlock() {
-      const ctx = getCtx();
-      if (ctx && ctx.state === 'suspended') ctx.resume();
+      const el = getClipEl();
+      if (!el) return;
+      try {
+        el.muted = true;
+        const p = el.play();
+        const settle = function () {
+          try { el.pause(); } catch (e) { /* ignore */ }
+          el.muted = false;
+        };
+        if (p && typeof p.then === 'function') p.then(settle, settle);
+        else settle();
+      } catch (e) { try { el.muted = false; } catch (e2) { /* ignore */ } }
     },
 
     /** Stop all speech immediately (always call before opening the mic!).
-        Clears the queue and halts the current clip/utterance. */
+        Clears the queue and halts the current clip/utterance. Bumping `gen`
+        invalidates any in-flight completion callback so a clip that ends after
+        stop() can never fire onend or start the next queued line. */
     stop() {
       gen++;              // invalidate any in-flight item's completion callback
       queue = [];
       playing = false;
       if (synth) synth.cancel();
-      if (currentSource) {
-        try { currentSource.onended = null; currentSource.stop(); } catch (e) { /* already stopped */ }
-        currentSource = null;
+      if (currentEl) {
+        try {
+          currentEl.onended = null;
+          currentEl.onerror = null;
+          currentEl.pause();
+        } catch (e) { /* already stopped */ }
+        currentEl = null;
       }
     },
 
