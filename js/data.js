@@ -289,7 +289,7 @@ window.STORIES = [
         id: 'pups-where',
         title: '小猫在哪里？', titleEn: "Where's the Kitten", emoji: '🔦', sticker: '🔦',
         bg: 'linear-gradient(180deg,#e1f5fe,#f3e5ff)', bgImage: 'images/pups/pups-where.webp', deco: '🔦🐾',
-        intro: { en: 'Search the city in full sentences! Tell the team where the lost kitten might be.', zh: '用整句话在城市里搜索！告诉大家小猫可能在哪里。', audioZh: 'audio/pups/intro-pups-where.wav' },
+        intro: { en: 'Search the city in full sentences! Tell the team where the lost kitten might be.', zh: '在城市里搜索！用整句话告诉大家小猫可能在哪里。', audioZh: 'audio/pups/intro-pups-where.wav' },
         audioComplete: 'audio/pups/complete-pups-where.wav',
         words: [
           { hanzi: '小猫在公园', pinyin: 'xiǎo māo zài gōng yuán', en: "the kitten's in the park", emoji: '🌳', also: ['公园', '小猫', '在'], audioZh: 'audio/pups/xiao-mao-zai-gong-yuan.wav' },
