@@ -260,7 +260,18 @@ window.Game = (function () {
     const ch = chapter();
 
     $('#scene-title').textContent = ch.emoji + ' ' + ch.title + ' · ' + ch.titleEn;
-    $('#scene-stage').style.background = ch.bg;
+    // Compose an optional themed background image OVER the gradient. The gradient
+    // stays underneath as an automatic fallback: it shows while the image loads
+    // and permanently if the file is missing/404s, so a bad path never blanks the
+    // stage. Chapters with no bgImage keep the plain gradient exactly as before.
+    const stage = $('#scene-stage');
+    if (ch.bgImage) {
+      stage.style.background = 'url("' + ch.bgImage + '") center/cover no-repeat, ' + ch.bg;
+      stage.classList.add('has-bg-image');
+    } else {
+      stage.style.background = ch.bg;
+      stage.classList.remove('has-bg-image');
+    }
     $('#stage-deco').innerHTML =
       Array.from(ch.deco).map((e) => '<span>' + e + '</span>').join('');
     $('#hero').innerHTML = heroHTML(s.hero);

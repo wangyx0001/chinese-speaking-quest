@@ -253,6 +253,23 @@ html, body {
   pointer-events: none;
 }
 
+/* When a chapter supplies a real background illustration, the faded corner
+   scenery emoji become redundant/cluttered — hide them, and lay a soft scrim
+   along the bottom so the hero photo + word pictures stay legible over bright art. */
+#scene-stage.has-bg-image #stage-deco { display: none; }
+#scene-stage.has-bg-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;                 /* scrim sits above the bg image… */
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.06) 32%, rgba(0,0,0,0) 55%);
+}
+/* …but the hero + word pictures sit above the scrim (they're earlier in DOM,
+   so without this the ::after would paint over them). */
+#scene-stage.has-bg-image #hero,
+#scene-stage.has-bg-image #tableau { z-index: 2; }
+
 #hero {
   position: absolute;
   left: 18px;

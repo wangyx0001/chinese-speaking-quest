@@ -17,6 +17,13 @@
    Each chapter also has a "finale" — a short magic phrase using words she
    just practiced. bg is the scene's background gradient, deco is the
    scenery emoji, sticker is the reward for finishing the chapter.
+
+   bgImage (optional) is a themed background picture for the scene, layered
+   OVER the bg gradient. Path convention: images/<storyId>/<chapterId>.webp
+   (lowercase, byte-exact — filenames are case-sensitive on GitHub Pages).
+   It's optional: a chapter with no bgImage just shows the bg gradient, and a
+   missing/mis-named file falls back to the gradient too — so art can be added
+   one chapter at a time. See tools/bg-image-prompts.md for how to make them.
    ============================================================ */
 
 window.STORIES = [
@@ -34,7 +41,7 @@ window.STORIES = [
       {
         id: 'panda-greetings',
         title: '你好村', titleEn: 'Hello Village', emoji: '🏡', sticker: '👋',
-        bg: 'linear-gradient(180deg,#aee9ff,#d4f7c5)', deco: '🏡🌳',
+        bg: 'linear-gradient(180deg,#aee9ff,#d4f7c5)', bgImage: 'images/panda/panda-greetings.webp', deco: '🏡🌳',
         intro: { en: 'Red Pandy meets friendly villagers! Say hello in Chinese to make friends for her.', zh: '红熊猫遇到了友好的村民！说你好，帮她交朋友吧！', audioZh: 'audio/panda/intro-panda-greetings.wav' },
         audioComplete: 'audio/panda/complete-panda-greetings.wav',
         words: [
