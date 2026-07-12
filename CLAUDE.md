@@ -4,13 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A zero-build, static browser game that helps a young child (~6–8) learn to **speak** Mandarin. The player advances an illustrated story by saying Chinese words out loud; the Web Speech API reads each word (TTS) and listens to the child (speech recognition). All art is emoji/CSS plus three background-removed character photos. The "panda" story's Mandarin lines additionally have pre-generated `.wav` clips (a cloned human voice) under `audio/`, played instead of the system TTS voice when present — see "Voice clips" below. It is hosted on GitHub Pages and used on an iPad.
+A zero-build, static browser game that helps a young child (~6–8) learn to **speak** Mandarin. The player advances an illustrated story by saying Chinese words out loud; the Web Speech API reads each word (TTS) and listens to the child (speech recognition). All art is emoji/CSS plus three background-removed character photos. Every story's Mandarin lines also have `.wav` clips of the **parent's own recorded voice** under `audio/`, played instead of the system TTS voice when present — see "Voice clips" below. It is hosted on GitHub Pages and used on an iPad.
 
 ## Run / develop / deploy
 
 - **Run locally:** open `index.html` directly, or (needed for the microphone off `file://`) serve it: `npx http-server -p 8317 -c-1` then open `http://localhost:8317`. There is **no build step, no bundler, no package.json, no test runner.** Python is not installed on this machine; use the Node `http-server`.
-- **Deploy:** `git push` to `main` auto-deploys via GitHub Pages (repo: `wangyx0001/chinese-speaking-quest`, live at `https://wangyx0001.github.io/chinese-speaking-quest/`). The Pages "deploy" step occasionally fails transiently — re-run the failed Actions run or push an empty commit; the build itself (artifact upload) is what matters.
-- **Verify changes:** there are no automated tests. Verify in a browser. The recognition/TTS layer is best tested by **monkey-patching `window.Speech`** from the console (see the mock pattern below), since a headless/preview browser can't grant a real mic.
+- **Deploy:** `git push` to `main` auto-deploys via GitHub Pages (repo: `wangyx0001/chinese-speaking-quest`, live at `https://wangyx0001.github.io/chinese-speaking-quest/`). The Pages "deploy" step occasionally fails transiently — re-run the failed Actions run or push an empty commit; the build itself (artifact upload) is what matters. **iOS Safari caches JS aggressively**, so after deploying, a code fix will look unchanged on the iPad until the cache is busted: test in a Private tab, or (if added to the Home Screen as a PWA) delete and re-add the icon.
+- **Verify changes:** there are no automated tests. Verify in a browser. The recognition/TTS layer is best tested by **monkey-patching `window.Speech`** from the console, since a headless/preview browser can't grant a real mic. Paste this to drive the challenge flow with no mic or audio (make her "say" a chosen word):
+
+  ```js
+  Speech.stop = () => {};
+  Speech.speakZh = (t, rate, onend) => { if (onend) onend(); };            // skip audio, still fire callbacks
+  Speech.listen = ({ onDone }) => { onDone({ error: null, candidates: ['你好'] }); return null; };
+  ```
+
+  `listen`'s real contract is `listen({timeoutMs, onDone})` → `onDone({ error, candidates })` (candidates = transcript strings); return `{ error: 'not-allowed' }` to exercise the mic-denied / Helper Mode paths, or `candidates: []` to exercise the silence/effort-pass path.
 
 ## Architecture
 
