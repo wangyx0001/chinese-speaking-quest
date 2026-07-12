@@ -75,7 +75,7 @@ window.STORIES = [
       {
         id: 'panda-colors',
         title: '彩虹桥', titleEn: 'Rainbow Bridge', emoji: '🌈', sticker: '🌈',
-        bg: 'linear-gradient(180deg,#c8ecff,#e8d5ff)', deco: '🌈☁️',
+        bg: 'linear-gradient(180deg,#c8ecff,#e8d5ff)', bgImage: 'images/panda/panda-colors.webp', deco: '🌈☁️',
         intro: { en: 'The rainbow bridge lost its colors! Say each color in Chinese to paint it back so Red Pandy can cross.', zh: '彩虹桥没有颜色了！说出每个颜色，把桥画回来，红熊猫才能过桥！', audioZh: 'audio/panda/intro-panda-colors.wav' },
         audioComplete: 'audio/panda/complete-panda-colors.wav',
         words: [
@@ -92,7 +92,7 @@ window.STORIES = [
       {
         id: 'panda-numbers',
         title: '数字河', titleEn: 'Number River', emoji: '🌊', sticker: '🔟',
-        bg: 'linear-gradient(180deg,#b3e5fc,#81d4fa)', deco: '🌊🐟',
+        bg: 'linear-gradient(180deg,#b3e5fc,#81d4fa)', bgImage: 'images/panda/panda-numbers.webp', deco: '🌊🐟',
         intro: { en: 'Red Pandy must cross the river! Count in Chinese — every number makes a stepping stone appear.', zh: '红熊猫要过河！一起数数，每个数字都会变出一块踏脚石！', audioZh: 'audio/panda/intro-panda-numbers.wav' },
         audioComplete: 'audio/panda/complete-panda-numbers.wav',
         words: [
@@ -112,7 +112,7 @@ window.STORIES = [
       {
         id: 'panda-food',
         title: '大市场', titleEn: 'Big Market', emoji: '🧺', sticker: '🍎',
-        bg: 'linear-gradient(180deg,#ffe0b2,#ffccbc)', deco: '🏪🍉',
+        bg: 'linear-gradient(180deg,#ffe0b2,#ffccbc)', bgImage: 'images/panda/panda-food.webp', deco: '🏪🍉',
         intro: { en: 'Red Pandy is SO hungry! Order yummy food in Chinese to fill her picnic basket.', zh: '红熊猫好饿呀！点好吃的，装满她的野餐篮子！', audioZh: 'audio/panda/intro-panda-food.wav' },
         audioComplete: 'audio/panda/complete-panda-food.wav',
         words: [
@@ -130,7 +130,7 @@ window.STORIES = [
       {
         id: 'panda-weather',
         title: '天气山', titleEn: 'Weather Mountain', emoji: '⛰️', sticker: '☀️',
-        bg: 'linear-gradient(180deg,#90caf9,#e1f5fe)', deco: '⛰️☁️',
+        bg: 'linear-gradient(180deg,#90caf9,#e1f5fe)', bgImage: 'images/panda/panda-weather.webp', deco: '⛰️☁️',
         intro: { en: 'The mountain weather is going wild! Say the weather words in Chinese to calm the sky.', zh: '山上的天气变来变去！说出天气词，让天空安静下来！', audioZh: 'audio/panda/intro-panda-weather.wav' },
         audioComplete: 'audio/panda/complete-panda-weather.wav',
         words: [
@@ -147,7 +147,7 @@ window.STORIES = [
       {
         id: 'panda-describe',
         title: '描述一下', titleEn: 'Describe It', emoji: '🔍', sticker: '🖼️',
-        bg: 'linear-gradient(180deg,#d7f0ff,#ffe9c7)', deco: '🔍🌼',
+        bg: 'linear-gradient(180deg,#d7f0ff,#ffe9c7)', bgImage: 'images/panda/panda-describe.webp', deco: '🔍🌼',
         intro: { en: 'On the way home, Red Pandy sees so many things! Describe them in Chinese — now with two words together.', zh: '回家的路上，红熊猫看到好多东西！用中文说一说，这次要说两个词哦！', audioZh: 'audio/panda/intro-panda-describe.wav' },
         audioComplete: 'audio/panda/complete-panda-describe.wav',
         words: [
@@ -163,7 +163,7 @@ window.STORIES = [
       {
         id: 'panda-family',
         title: '竹子山', titleEn: 'Bamboo Mountain', emoji: '🎋', sticker: '🏠',
-        bg: 'linear-gradient(180deg,#c8e6c9,#a5d6a7)', deco: '🎋🎍',
+        bg: 'linear-gradient(180deg,#c8e6c9,#a5d6a7)', bgImage: 'images/panda/panda-family.webp', deco: '🎋🎍',
         intro: { en: 'Red Pandy is home! Call each family member out of the bamboo for the biggest red panda hug ever.', zh: '红熊猫到家啦！把每个家人叫出来，抱一个大大的抱抱！', audioZh: 'audio/panda/intro-panda-family.wav' },
         audioComplete: 'audio/panda/complete-panda-family.wav',
         words: [
@@ -180,7 +180,7 @@ window.STORIES = [
       {
         id: 'panda-speaks',
         title: '红熊猫说话', titleEn: 'Red Pandy Speaks', emoji: '💬', sticker: '💬',
-        bg: 'linear-gradient(180deg,#ffe0ec,#e5f5c7)', deco: '💬🌟',
+        bg: 'linear-gradient(180deg,#ffe0ec,#e5f5c7)', bgImage: 'images/panda/panda-speaks.webp', deco: '💬🌟',
         intro: { en: 'Sitting with her family, Red Pandy tells them all about her journey home — in whole sentences now. You can do it!', zh: '红熊猫和家人坐在一起，给大家讲她回家路上的故事——这次要说一整句话啦！你可以的！', audioZh: 'audio/panda/intro-panda-speaks.wav' },
         words: [
           { hanzi: '我爱吃苹果', pinyin: 'wǒ ài chī píng guǒ', en: 'I love eating apples', emoji: '🍎', also: ['苹果', '爱吃', '我爱'], audioZh: 'audio/panda/wo-ai-chi-ping-guo.wav' },
