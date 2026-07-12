@@ -57,7 +57,7 @@ window.STORIES = [
       {
         id: 'panda-animals',
         title: '快乐农场', titleEn: 'Happy Farm', emoji: '🚜', sticker: '🐶',
-        bg: 'linear-gradient(180deg,#bfe9ff,#f5e5a3)', deco: '🚜🌾',
+        bg: 'linear-gradient(180deg,#bfe9ff,#f5e5a3)', bgImage: 'images/panda/panda-animals.webp', deco: '🚜🌾',
         intro: { en: 'The farm animals are hiding in the barn! Call their names in Chinese and they will come out to play.', zh: '小动物们躲在谷仓里！叫它们的名字，它们就会出来玩！', audioZh: 'audio/panda/intro-panda-animals.wav' },
         audioComplete: 'audio/panda/complete-panda-animals.wav',
         words: [
