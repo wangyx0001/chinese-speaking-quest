@@ -383,10 +383,13 @@
     });
 
     /* ---------- boot ---------- */
-    fetch('audio-manifest.json')
-      .then((r) => r.json())
-      .then((m) => { manifest = m; setupHint('Loaded ' + m.length + ' clips from the manifest.'); })
-      .catch((e) => setupHint('Could not load audio-manifest.json: ' + e.message));
+    // Default is the panda manifest; pass ?manifest=audio-manifest-2.json to
+    // record a different set (e.g. stories 2 & 3).
+    const MANIFEST_URL = new URLSearchParams(location.search).get('manifest') || 'audio-manifest.json';
+    fetch(MANIFEST_URL)
+      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then((m) => { manifest = m; setupHint('Loaded ' + m.length + ' clips from ' + MANIFEST_URL + '.'); })
+      .catch((e) => setupHint('Could not load ' + MANIFEST_URL + ': ' + e.message));
   })();
   </script>
 </body>
