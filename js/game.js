@@ -273,6 +273,13 @@ window.Game = (function () {
 
     show('scene');
 
+    // Prime the iOS audio session into record mode NOW, inside this tap gesture,
+    // before any audio plays — so the intro and every word sit at the same volume
+    // instead of a loud intro then quieter clips once the first-word mic ducks it.
+    // Only when the mic is actually going to be used (in Helper Mode it isn't, so
+    // there's no duck to pre-empt). No-op off iOS / after the first call.
+    if (!state.helper && state.sttAvailable) Speech.warmupMic();
+
     Speech.stop();
     Speech.speakZh(ch.intro.zh, undefined, undefined, ch.intro.audioZh);
   }
@@ -578,6 +585,11 @@ window.Game = (function () {
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch (e) { /* ok */ }
       Speech.unlock(); // unlock recorded-clip playback (needed for iOS Safari)
+      // Prime the iOS audio session into record mode on this first gesture too,
+      // so even the launcher clip below sits at the same volume as the rest of
+      // the game (otherwise the launcher + story picker play loud and the duck
+      // only starts at the first chapter). No-op off iOS / after the first call.
+      if (!state.helper && state.sttAvailable) Speech.warmupMic();
       Speech.speakZh('选一个故事吧！', undefined, undefined, CORE_AUDIO.launch);
       show('story');
     });

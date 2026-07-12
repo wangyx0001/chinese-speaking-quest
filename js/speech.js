@@ -40,6 +40,13 @@ window.Speech = (function () {
   let clipEl = null;
   let currentEl = null;  // the element mid-playback (for stop()); === clipEl or null
 
+  let micWarmed = false; // see warmupMic()
+
+  // iPadOS 13+ reports as "MacIntel" but has a touch screen; catch it too.
+  const IS_IOS =
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   function getClipEl() {
     if (clipEl) return clipEl;
     if (typeof Audio === 'undefined') return null;
@@ -202,6 +209,42 @@ window.Speech = (function () {
         if (p && typeof p.then === 'function') p.then(settle, settle);
         else settle();
       } catch (e) { try { el.muted = false; } catch (e2) { /* ignore */ } }
+    },
+
+    /** Prime the mic ONCE, early, inside a user gesture (call from the tap that
+        opens a chapter, before the intro plays) to fix inconsistent volume on
+        iOS. Background: the first time SpeechRecognition starts, iOS switches the
+        AVAudioSession to a record category that ducks/re-routes playback — and
+        WebKit doesn't restore it afterward. So the chapter intro plays loud, then
+        every clip after the first word (once the mic has opened) is quieter. There
+        is no web API to control the audio session, so we can't undo the duck; we
+        can only make it CONSISTENT by triggering it up front, before any audio
+        plays, so the whole chapter sits at the same level. We do that with a brief
+        throwaway recognizer (started then aborted; results ignored).
+
+        iOS-only (elsewhere the mic doesn't duck and this would needlessly flash
+        the recording indicator / prompt for permission), and once per session
+        (the session stays in record mode after the first activation). Best-effort:
+        any failure is swallowed — a warm-up that doesn't take just leaves the
+        original behavior. Caller gates on mic actually being used (skip in Helper
+        Mode, where no duck would otherwise occur). */
+    warmupMic() {
+      if (micWarmed || !SR || !IS_IOS) return;
+      micWarmed = true;
+      try {
+        const rec = new SR();
+        rec.lang = 'zh-CN';
+        rec.interimResults = false;
+        rec.continuous = false;
+        rec.onerror = function () {};
+        rec.onresult = function () {};
+        rec.onend = function () {};
+        rec.start();
+        // Hold the mic briefly so the audio session settles into record mode,
+        // then release it. The real per-word listen() comes much later (after
+        // the intro, the word, and the Start tap), so there's no overlap.
+        setTimeout(function () { try { rec.abort(); } catch (e) { /* ignore */ } }, 450);
+      } catch (e) { /* best-effort — leave original behavior on failure */ }
     },
 
     /** Stop all speech immediately (always call before opening the mic!).
