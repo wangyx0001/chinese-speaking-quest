@@ -206,7 +206,7 @@ window.STORIES = [
       {
         id: 'pups-hq',
         title: '救援基地', titleEn: 'Rescue HQ', emoji: '🗼', sticker: '📣',
-        bg: 'linear-gradient(180deg,#b3e5fc,#ffe082)', deco: '🗼📡',
+        bg: 'linear-gradient(180deg,#b3e5fc,#ffe082)', bgImage: 'images/pups/pups-hq.webp', deco: '🗼📡',
         intro: { en: 'Welcome to Rescue HQ! Skye is here to teach you the squad commands — every word makes a pup slide down the fire pole!', zh: '欢迎来到救援基地！天天教你小队口令，每说一个口令，就有一只小狗滑下消防杆！', audioZh: 'audio/pups/intro-pups-hq.wav' },
         audioComplete: 'audio/pups/complete-pups-hq.wav',
         words: [
@@ -222,7 +222,7 @@ window.STORIES = [
       {
         id: 'pups-vehicles',
         title: '交通工具', titleEn: 'Vehicle Garage', emoji: '🚒', sticker: '🚒',
-        bg: 'linear-gradient(180deg,#cfd8dc,#b0bec5)', deco: '🏁🔧',
+        bg: 'linear-gradient(180deg,#cfd8dc,#b0bec5)', bgImage: 'images/pups/pups-vehicles.webp', deco: '🏁🔧',
         intro: { en: 'Time to launch the rescue vehicles! Name each one in Chinese and watch it zoom out of the garage.', zh: '该出动救援车啦！说出每辆车的名字，看它冲出车库！', audioZh: 'audio/pups/intro-pups-vehicles.wav' },
         audioComplete: 'audio/pups/complete-pups-vehicles.wav',
         words: [
@@ -239,7 +239,7 @@ window.STORIES = [
       {
         id: 'pups-actions',
         title: '动作训练', titleEn: 'Action Training', emoji: '🏃', sticker: '🏅',
-        bg: 'linear-gradient(180deg,#dcedc8,#aed581)', deco: '🚧🎯',
+        bg: 'linear-gradient(180deg,#dcedc8,#aed581)', bgImage: 'images/pups/pups-actions.webp', deco: '🚧🎯',
         intro: { en: 'Rescue pups need training! Shout each action in Chinese and Skye will do it.', zh: '救援小狗要训练！大声喊出动作，天天就会做！', audioZh: 'audio/pups/intro-pups-actions.wav' },
         audioComplete: 'audio/pups/complete-pups-actions.wav',
         words: [
@@ -256,7 +256,7 @@ window.STORIES = [
       {
         id: 'pups-city',
         title: '城市搜索', titleEn: 'City Search', emoji: '🗺️', sticker: '🐱',
-        bg: 'linear-gradient(180deg,#e1f5fe,#ffe0e0)', deco: '🏙️🔦',
+        bg: 'linear-gradient(180deg,#e1f5fe,#ffe0e0)', bgImage: 'images/pups/pups-city.webp', deco: '🏙️🔦',
         intro: { en: 'A kitten is lost in the city! Say each place in Chinese to send Skye to search it. Where can she be?', zh: '小猫在城市里走丢了！说出每个地方，派天天去找一找。小猫会在哪里呢？', audioZh: 'audio/pups/intro-pups-city.wav' },
         audioComplete: 'audio/pups/complete-pups-city.wav',
         words: [
@@ -272,7 +272,7 @@ window.STORIES = [
       {
         id: 'pups-rollout',
         title: '出动！', titleEn: 'Roll Out', emoji: '🛞', sticker: '🛞',
-        bg: 'linear-gradient(180deg,#c8e6ff,#ffd9a8)', deco: '🛞💨',
+        bg: 'linear-gradient(180deg,#c8e6ff,#ffd9a8)', bgImage: 'images/pups/pups-rollout.webp', deco: '🛞💨',
         intro: { en: 'Put the words together! Say each action with its vehicle to roll the whole team out.', zh: '把词连起来！说出动作加交通工具，让全队一起出动！', audioZh: 'audio/pups/intro-pups-rollout.wav' },
         audioComplete: 'audio/pups/complete-pups-rollout.wav',
         words: [
@@ -288,7 +288,7 @@ window.STORIES = [
       {
         id: 'pups-where',
         title: '小猫在哪里？', titleEn: "Where's the Kitten", emoji: '🔦', sticker: '🔦',
-        bg: 'linear-gradient(180deg,#e1f5fe,#f3e5ff)', deco: '🔦🐾',
+        bg: 'linear-gradient(180deg,#e1f5fe,#f3e5ff)', bgImage: 'images/pups/pups-where.webp', deco: '🔦🐾',
         intro: { en: 'Search the city in full sentences! Tell the team where the lost kitten might be.', zh: '用整句话在城市里搜索！告诉大家小猫可能在哪里。', audioZh: 'audio/pups/intro-pups-where.wav' },
         audioComplete: 'audio/pups/complete-pups-where.wav',
         words: [
@@ -303,7 +303,7 @@ window.STORIES = [
       {
         id: 'pups-radio',
         title: '对讲机', titleEn: 'Radio Call', emoji: '📻', sticker: '📻',
-        bg: 'linear-gradient(180deg,#ffe082,#b3e5fc)', deco: '📻📡',
+        bg: 'linear-gradient(180deg,#ffe082,#b3e5fc)', bgImage: 'images/pups/pups-radio.webp', deco: '📻📡',
         intro: { en: 'Call the pups on the radio! Say each full-sentence order out loud.', zh: '用对讲机呼叫小狗们！大声说出每一句完整的命令。', audioZh: 'audio/pups/intro-pups-radio.wav' },
         audioComplete: 'audio/pups/complete-pups-radio.wav',
         words: [
@@ -318,7 +318,7 @@ window.STORIES = [
       {
         id: 'pups-rescue',
         title: '大救援', titleEn: 'The Big Rescue', emoji: '🚁', sticker: '🎖️',
-        bg: 'linear-gradient(180deg,#81d4fa,#4fc3f7)', deco: '🚁🌲',
+        bg: 'linear-gradient(180deg,#81d4fa,#4fc3f7)', bgImage: 'images/pups/pups-rescue.webp', deco: '🚁🌲',
         intro: { en: "The kitten is stuck in a tall tree! Guide Skye's helicopter with Chinese words — up, down, left, right!", zh: '小猫被困在大树上！用中文指挥天天的直升机，上，下，左，右！', audioZh: 'audio/pups/intro-pups-rescue.wav' },
         audioComplete: 'audio/pups/complete-pups-rescue.wav',
         words: [
@@ -334,7 +334,7 @@ window.STORIES = [
       {
         id: 'pups-hero',
         title: '小英雄', titleEn: 'Little Hero', emoji: '🦸', sticker: '🦸',
-        bg: 'linear-gradient(180deg,#ffd54f,#4fc3f7)', deco: '🦸🏆',
+        bg: 'linear-gradient(180deg,#ffd54f,#4fc3f7)', bgImage: 'images/pups/pups-hero.webp', deco: '🦸🏆',
         intro: { en: 'The kitten is safe! Celebrate the rescue with proud, whole sentences.', zh: '小猫得救啦！用自豪的整句话庆祝这次救援吧！', audioZh: 'audio/pups/intro-pups-hero.wav' },
         words: [
           { hanzi: '我们救了小猫', pinyin: 'wǒ men jiù le xiǎo māo', en: 'we saved the kitten', emoji: '🐱', also: ['救了', '小猫', '我们'], audioZh: 'audio/pups/wo-men-jiu-le-xiao-mao.wav' },
