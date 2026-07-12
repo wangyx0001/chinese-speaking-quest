@@ -58,7 +58,7 @@ Path = `images/<storyId>/<chapterId>.webp`. Full prompt = STYLE PREAMBLE + the S
 | `panda-numbers` | Number River 🌊 | a winding blue river with round stepping stones and lily pads |
 | `panda-food` | Big Market 🧺 | a lively outdoor market with fruit and vegetable stalls under awnings |
 | `panda-weather` | Weather Mountain ⛰️ | a tall green mountain with sun, fluffy clouds and a rainbow of weather |
-| `panda-describe` | Describe It 🔍 | a cozy gallery nook with framed pictures on a warm wall |
+| `panda-describe` | Describe It 🔍 | a winding countryside path leading home, with leafy trees, a little fruit stall, a cozy house in the distance and fluffy white clouds |
 | `panda-family` | Bamboo Mountain 🎋 | a lush green bamboo forest on a gentle hillside |
 | `panda-speaks` | Red Pandy Speaks 💬 | a warm welcoming home interior with soft light and cushions |
 
