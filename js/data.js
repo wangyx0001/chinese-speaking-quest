@@ -360,7 +360,7 @@ window.STORIES = [
       {
         id: 'princess-palace',
         title: '皇宫', titleEn: 'The Palace', emoji: '🏰', sticker: '💎',
-        bg: 'linear-gradient(180deg,#f8bbd0,#fce4ec)', deco: '🏰✨',
+        bg: 'linear-gradient(180deg,#f8bbd0,#fce4ec)', bgImage: 'images/princess/princess-palace.webp', deco: '🏰✨',
         intro: { en: 'The palace doors are sealed by magic! Only polite words can open them. Say each one in Chinese!', zh: '皇宫的门被魔法锁住了！只有礼貌的话才能打开，说说看吧！', audioZh: 'audio/princess/intro-princess-palace.wav' },
         audioComplete: 'audio/princess/complete-princess-palace.wav',
         words: [
@@ -376,7 +376,7 @@ window.STORIES = [
       {
         id: 'princess-wardrobe',
         title: '魔法衣橱', titleEn: 'Magic Wardrobe', emoji: '👗', sticker: '👗',
-        bg: 'linear-gradient(180deg,#e1bee7,#f3e5f5)', deco: '🪞🎀',
+        bg: 'linear-gradient(180deg,#e1bee7,#f3e5f5)', bgImage: 'images/princess/princess-wardrobe.webp', deco: '🪞🎀',
         intro: { en: 'Time to dress up for the royal ball! Say each item in Chinese and it flies out of the magic wardrobe.', zh: '该为皇家舞会打扮啦！说出每样东西，它就会从魔法衣橱里飞出来！', audioZh: 'audio/princess/intro-princess-wardrobe.wav' },
         audioComplete: 'audio/princess/complete-princess-wardrobe.wav',
         words: [
@@ -392,7 +392,7 @@ window.STORIES = [
       {
         id: 'princess-dressup',
         title: '打扮', titleEn: 'Dress Up', emoji: '💄', sticker: '💄',
-        bg: 'linear-gradient(180deg,#f8d3ff,#fff0f6)', deco: '💄🎀',
+        bg: 'linear-gradient(180deg,#f8d3ff,#fff0f6)', bgImage: 'images/princess/princess-dressup.webp', deco: '💄🎀',
         intro: { en: 'Get ready for the ball! Put words together — say what to wear.', zh: '准备去舞会啦！把词连起来，说说要穿什么。', audioZh: 'audio/princess/intro-princess-dressup.wav' },
         audioComplete: 'audio/princess/complete-princess-dressup.wav',
         words: [
@@ -408,7 +408,7 @@ window.STORIES = [
       {
         id: 'princess-mirror',
         title: '魔镜', titleEn: 'Magic Mirror', emoji: '🪞', sticker: '🪞',
-        bg: 'linear-gradient(180deg,#d1c4e9,#ede7f6)', deco: '🪞⭐',
+        bg: 'linear-gradient(180deg,#d1c4e9,#ede7f6)', bgImage: 'images/princess/princess-mirror.webp', deco: '🪞⭐',
         intro: { en: 'The magic mirror wants to meet you! Say each body part in Chinese and it lights up with sparkles.', zh: '魔镜想认识你！说出身体部位，它就会亮闪闪！', audioZh: 'audio/princess/intro-princess-mirror.wav' },
         audioComplete: 'audio/princess/complete-princess-mirror.wav',
         words: [
@@ -425,7 +425,7 @@ window.STORIES = [
       {
         id: 'princess-inmirror',
         title: '照镜子', titleEn: 'In the Mirror', emoji: '💫', sticker: '💫',
-        bg: 'linear-gradient(180deg,#d1c4e9,#f3e5f5)', deco: '💫🪞',
+        bg: 'linear-gradient(180deg,#d1c4e9,#f3e5f5)', bgImage: 'images/princess/princess-inmirror.webp', deco: '💫🪞',
         intro: { en: 'Look in the magic mirror and describe yourself — in whole sentences!', zh: '照照魔镜，用整句话说说你自己吧！', audioZh: 'audio/princess/intro-princess-inmirror.wav' },
         audioComplete: 'audio/princess/complete-princess-inmirror.wav',
         words: [
@@ -440,7 +440,7 @@ window.STORIES = [
       {
         id: 'princess-teaparty',
         title: '皇家茶会', titleEn: 'Royal Tea Party', emoji: '🫖', sticker: '🍰',
-        bg: 'linear-gradient(180deg,#ffe0f0,#fff3e0)', deco: '🫖🧚',
+        bg: 'linear-gradient(180deg,#ffe0f0,#fff3e0)', bgImage: 'images/princess/princess-teaparty.webp', deco: '🫖🧚',
         intro: { en: 'The fairies are coming for tea! Say each treat in Chinese to set the royal table.', zh: '小仙女们要来喝茶啦！说出每样点心，摆好皇家餐桌！', audioZh: 'audio/princess/intro-princess-teaparty.wav' },
         audioComplete: 'audio/princess/complete-princess-teaparty.wav',
         words: [
@@ -456,7 +456,7 @@ window.STORIES = [
       {
         id: 'princess-serving',
         title: '请客', titleEn: 'Serving Guests', emoji: '🧁', sticker: '🧁',
-        bg: 'linear-gradient(180deg,#ffe0f0,#fff8e1)', deco: '🧁🫖',
+        bg: 'linear-gradient(180deg,#ffe0f0,#fff8e1)', bgImage: 'images/princess/princess-serving.webp', deco: '🧁🫖',
         intro: { en: 'Be a kind host! Ask for and offer treats in full sentences.', zh: '做个热情的小主人！用整句话请客人吃点心。', audioZh: 'audio/princess/intro-princess-serving.wav' },
         audioComplete: 'audio/princess/complete-princess-serving.wav',
         words: [
@@ -471,7 +471,7 @@ window.STORIES = [
       {
         id: 'princess-garden',
         title: '皇家花园', titleEn: 'Royal Garden', emoji: '🌷', sticker: '💎',
-        bg: 'linear-gradient(180deg,#c8e6c9,#f8bbd0)', deco: '🌷🦋',
+        bg: 'linear-gradient(180deg,#c8e6c9,#f8bbd0)', bgImage: 'images/princess/princess-garden.webp', deco: '🌷🦋',
         intro: { en: 'The last crown jewel is hidden in the royal garden! Walk through and say what you see in Chinese — its sparkle will reveal it.', zh: '最后一颗宝石藏在皇家花园里！走一走，用中文说说你看到了什么，宝石就会亮起来！', audioZh: 'audio/princess/intro-princess-garden.wav' },
         audioComplete: 'audio/princess/complete-princess-garden.wav',
         words: [
@@ -487,7 +487,7 @@ window.STORIES = [
       {
         id: 'princess-ball',
         title: '皇家舞会', titleEn: 'Ball & Coronation', emoji: '👑', sticker: '👑',
-        bg: 'linear-gradient(180deg,#ffd6f0,#d1c4ff)', deco: '👑🎊',
+        bg: 'linear-gradient(180deg,#ffd6f0,#d1c4ff)', bgImage: 'images/princess/princess-ball.webp', deco: '👑🎊',
         intro: { en: 'The crown is whole again — time for the royal ball! Celebrate with big, happy sentences.', zh: '皇冠修好啦——皇家舞会开始！用又长又开心的句子一起庆祝吧！', audioZh: 'audio/princess/intro-princess-ball.wav' },
         words: [
           { hanzi: '我们一起跳舞', pinyin: 'wǒ men yì qǐ tiào wǔ', en: "let's dance together", emoji: '💃', also: ['跳舞', '一起', '我们'], audioZh: 'audio/princess/wo-men-yi-qi-tiao-wu.wav' },
