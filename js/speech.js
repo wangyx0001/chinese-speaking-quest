@@ -41,6 +41,7 @@ window.Speech = (function () {
   let currentEl = null;  // the element mid-playback (for stop()); === clipEl or null
 
   let micWarmed = false; // see warmupMic()
+  let micStream = null;  // persistent getUserMedia stream, see holdMic()
 
   // iPadOS 13+ reports as "MacIntel" but has a touch screen; catch it too.
   const IS_IOS =
@@ -245,6 +246,39 @@ window.Speech = (function () {
         // the intro, the word, and the Start tap), so there's no overlap.
         setTimeout(function () { try { rec.abort(); } catch (e) { /* ignore */ } }, 450);
       } catch (e) { /* best-effort — leave original behavior on failure */ }
+    },
+
+    /** Pin the iOS audio session in record mode for a whole chapter by holding a
+        microphone capture (getUserMedia) open. Background: warmupMic() only
+        covers the FIRST activation, but each word does a full SpeechRecognition
+        start→abort (see listen()), and on iOS that flips the session INTO record
+        mode (ducking playback) and BACK each time — so playback volume dips and
+        returns per word. Keeping a mic stream open holds the session in record
+        mode continuously, so those per-word start/stops no longer toggle it and
+        the volume stays even (slightly lower, but consistent).
+
+        Call from the tap that enters a chapter (iOS needs a gesture to grant the
+        mic); call releaseMic() when leaving. iOS-only — elsewhere playback doesn't
+        duck and we don't want a persistent recording indicator. Best-effort and
+        async: if the mic can't be acquired we just fall back to the prior per-word
+        behavior. The held stream is inert (never read); it exists only to keep the
+        audio session active. */
+    holdMic() {
+      if (!IS_IOS || micStream) return;
+      const md = navigator.mediaDevices;
+      if (!md || !md.getUserMedia) return;
+      md.getUserMedia({ audio: true }).then(function (stream) {
+        micStream = stream;
+      }).catch(function () { /* denied/unavailable — keep prior behavior */ });
+    },
+
+    /** Release the held mic (see holdMic). Call when leaving the scene so the
+        recording indicator doesn't linger on menus. */
+    releaseMic() {
+      if (!micStream) return;
+      try { micStream.getTracks().forEach(function (t) { t.stop(); }); }
+      catch (e) { /* already stopped */ }
+      micStream = null;
     },
 
     /** Stop all speech immediately (always call before opening the mic!).

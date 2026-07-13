@@ -287,12 +287,13 @@ window.Game = (function () {
 
     show('scene');
 
-    // Prime the iOS audio session into record mode NOW, inside this tap gesture,
-    // before any audio plays — so the intro and every word sit at the same volume
-    // instead of a loud intro then quieter clips once the first-word mic ducks it.
-    // Only when the mic is actually going to be used (in Helper Mode it isn't, so
-    // there's no duck to pre-empt). No-op off iOS / after the first call.
-    if (!state.helper && state.sttAvailable) Speech.warmupMic();
+    // Pin the iOS audio session in record mode for this whole chapter by holding
+    // the mic open (released in leaveScene). This stops the per-word volume dip:
+    // otherwise each word's recognition start/stop flips the session in and out of
+    // record mode, ducking playback intermittently. Inside this tap gesture (iOS
+    // needs a gesture to grant the mic), and only when the mic will actually be
+    // used (skip Helper Mode). No-op off iOS.
+    if (!state.helper && state.sttAvailable) Speech.holdMic();
 
     Speech.stop();
     Speech.speakZh(ch.intro.zh, undefined, undefined, ch.intro.audioZh);
@@ -585,6 +586,7 @@ window.Game = (function () {
     state.listening = false;
     state.busy = false;
     Speech.stop();
+    Speech.releaseMic(); // stop pinning the audio session once we leave the chapter
     const mic = $('#btn-mic');
     mic.classList.remove('listening');
     mic.textContent = '🎤';
