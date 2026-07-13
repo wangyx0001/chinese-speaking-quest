@@ -76,10 +76,13 @@ window.Game = (function () {
     return 1;
   }
 
+  // Difficulty badge — deliberately NOT stars, so ⭐ everywhere else means only
+  // the stars she has EARNED (reward is by speed, not difficulty). Green→yellow→
+  // orange reads as easy→harder; the word/phrase/sentence label carries the rest.
   const LEVEL_BADGE = {
-    1: '⭐ 词 word',
-    2: '⭐⭐ 短语 phrase',
-    3: '⭐⭐⭐ 句子 sentence',
+    1: '🟢 词 word',
+    2: '🟡 短语 phrase',
+    3: '🟠 句子 sentence',
   };
 
   function chapter() { return state.story.chapters[state.chapterIdx]; }
