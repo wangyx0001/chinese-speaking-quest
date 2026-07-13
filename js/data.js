@@ -482,7 +482,7 @@ window.STORIES = [
           { hanzi: '我闻到花香', pinyin: 'wǒ wén dào huā xiāng', en: 'I smell the flowers', emoji: '👃', also: ['花香', '闻到', '香'], audioZh: 'audio/princess/wo-wen-dao-hua-xiang.wav' },
           { hanzi: '我找到宝石了', pinyin: 'wǒ zhǎo dào bǎo shí le', en: 'I found the jewel', emoji: '💎', also: ['宝石', '找到', '找'], audioZh: 'audio/princess/wo-zhao-dao-bao-shi-le.wav' },
         ],
-        finale: { hanzi: '我们找到宝石啦！', pinyin: 'wǒ men zhǎo dào bǎo shí la!', en: 'We found the jewel!', emoji: '💎', also: ['宝石', '找到', '找'], audioZh: 'audio/princess/finale-princess-garden.wav' },
+        finale: { hanzi: '闪亮的宝石回到皇冠上啦！', pinyin: 'shǎn liàng de bǎo shí huí dào huáng guān shàng la!', en: 'The shiny jewel is back on the crown!', emoji: '💎', also: ['宝石回到皇冠', '回到皇冠', '闪亮的宝石', '宝石', '皇冠'], audioZh: 'audio/princess/finale-princess-garden.wav' },
       },
       {
         id: 'princess-ball',
