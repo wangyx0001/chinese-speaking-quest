@@ -646,10 +646,10 @@ window.Game = (function () {
     let holdTimer = null;
     const startHold = () => {
       holdTimer = setTimeout(() => {
-        if (confirm('Reset ALL progress (stars, chapters, stickers)?')) {
+        if (confirm('Reset her stars and stickers? Unlocked chapters stay open.')) {
           Progress.reset();
           updateStarHUD(false);
-          toast('Progress reset — a brand new adventure!');
+          toast('Stars & stickers reset — chapters stay unlocked!');
         }
       }, 3000);
     };

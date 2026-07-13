@@ -81,7 +81,16 @@ window.Progress = (function () {
     },
 
     reset() {
-      state = fresh();
+      const prev = state;
+      state = fresh(); // zeroes stars, stickers (done), Helper Mode
+      // Keep chapters she'd already opened unlocked — only the earned rewards
+      // reset, so she isn't locked back out of chapters she'd reached.
+      (window.STORIES || []).forEach((s) => {
+        const old = prev && prev.stories && prev.stories[s.id];
+        if (old && typeof old.unlocked === 'number' && old.unlocked >= 1) {
+          state.stories[s.id].unlocked = old.unlocked;
+        }
+      });
       save();
     },
   };
