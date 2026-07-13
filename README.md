@@ -53,5 +53,7 @@ Notes:
   the folder first, as above) and read each line aloud — it saves the clips
   automatically. Lines you haven't recorded fall back to the computer voice, so
   you can record a little at a time.
-- **Reset progress:** press and hold the title on the first screen for
-  3 seconds.
+- **Reset stars & stickers:** press and hold the title on the first screen for
+  3 seconds. This clears her star count, earned stickers, and Helper Mode —
+  chapters she's already unlocked **stay open**, so she isn't locked back
+  out of anything.
