@@ -248,21 +248,27 @@ window.Speech = (function () {
       } catch (e) { /* best-effort — leave original behavior on failure */ }
     },
 
-    /** Pin the iOS audio session in record mode for a whole chapter by holding a
-        microphone capture (getUserMedia) open. Background: warmupMic() only
-        covers the FIRST activation, but each word does a full SpeechRecognition
-        start→abort (see listen()), and on iOS that flips the session INTO record
-        mode (ducking playback) and BACK each time — so playback volume dips and
-        returns per word. Keeping a mic stream open holds the session in record
-        mode continuously, so those per-word start/stops no longer toggle it and
-        the volume stays even (slightly lower, but consistent).
+    /** Pin the iOS audio session in record mode by holding a microphone capture
+        (getUserMedia) open — acquired the first time she enters a chapter and then
+        kept open for the REST OF THE SESSION. Background: warmupMic() only covers
+        the first activation, but each word does a full SpeechRecognition start→
+        abort (see listen()), and on iOS that flips the session INTO record mode
+        (ducking playback) and BACK each time — so playback volume dips and returns.
+        A held stream keeps the session in record mode continuously, so neither the
+        per-word start/stops NOR moving between chapters toggles it, and the volume
+        stays even (slightly lower, but consistent).
 
-        Call from the tap that enters a chapter (iOS needs a gesture to grant the
-        mic); call releaseMic() when leaving. iOS-only — elsewhere playback doesn't
-        duck and we don't want a persistent recording indicator. Best-effort and
-        async: if the mic can't be acquired we just fall back to the prior per-word
-        behavior. The held stream is inert (never read); it exists only to keep the
-        audio session active. */
+        We deliberately do NOT release it between chapters: releasing let the
+        session revert, so the next chapter re-ducked. The cost is the iOS recording
+        indicator stays lit for the session — the accepted trade for even volume.
+        (The browser releases the stream when the tab closes; there's no in-session
+        moment we'd want it back.)
+
+        Call from a tap gesture (iOS needs one to grant the mic). Idempotent — the
+        micStream guard makes repeat calls no-ops. iOS-only; elsewhere playback
+        doesn't duck so this does nothing. Best-effort and async: if the mic can't
+        be acquired we fall back to the prior per-word behavior. The held stream is
+        inert (never read); it exists only to keep the audio session active. */
     holdMic() {
       if (!IS_IOS || micStream) return;
       const md = navigator.mediaDevices;
@@ -270,15 +276,6 @@ window.Speech = (function () {
       md.getUserMedia({ audio: true }).then(function (stream) {
         micStream = stream;
       }).catch(function () { /* denied/unavailable — keep prior behavior */ });
-    },
-
-    /** Release the held mic (see holdMic). Call when leaving the scene so the
-        recording indicator doesn't linger on menus. */
-    releaseMic() {
-      if (!micStream) return;
-      try { micStream.getTracks().forEach(function (t) { t.stop(); }); }
-      catch (e) { /* already stopped */ }
-      micStream = null;
     },
 
     /** Stop all speech immediately (always call before opening the mic!).

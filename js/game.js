@@ -287,12 +287,13 @@ window.Game = (function () {
 
     show('scene');
 
-    // Pin the iOS audio session in record mode for this whole chapter by holding
-    // the mic open (released in leaveScene). This stops the per-word volume dip:
-    // otherwise each word's recognition start/stop flips the session in and out of
-    // record mode, ducking playback intermittently. Inside this tap gesture (iOS
-    // needs a gesture to grant the mic), and only when the mic will actually be
-    // used (skip Helper Mode). No-op off iOS.
+    // Pin the iOS audio session in record mode by holding the mic open (see
+    // Speech.holdMic) — acquired here on the first chapter and kept for the whole
+    // session so playback volume stays even both WITHIN and BETWEEN chapters
+    // (releasing between chapters let the session revert, so the next chapter
+    // re-ducked). Inside this tap gesture (iOS needs one to grant the mic), and
+    // only when the mic will actually be used (skip Helper Mode). Idempotent +
+    // no-op off iOS.
     if (!state.helper && state.sttAvailable) Speech.holdMic();
 
     Speech.stop();
@@ -586,7 +587,6 @@ window.Game = (function () {
     state.listening = false;
     state.busy = false;
     Speech.stop();
-    Speech.releaseMic(); // stop pinning the audio session once we leave the chapter
     const mic = $('#btn-mic');
     mic.classList.remove('listening');
     mic.textContent = '🎤';
