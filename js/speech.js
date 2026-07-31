@@ -39,9 +39,42 @@ window.Speech = (function () {
   // file has no side effects at load; primed once by unlock().
   let clipEl = null;
   let currentEl = null;  // the element mid-playback (for stop()); === clipEl or null
+  let clipTurn = 0;      // bumped per clip; identifies who owns the element now
 
   let micWarmed = false; // see warmupMic()
   let micStream = null;  // persistent getUserMedia stream, see holdMic()
+
+  // Clips are ~250 KB WAVs fetched from the network on demand. On a weak or
+  // flaky connection one can take many seconds to arrive — or never arrive —
+  // and until it does the whole queue is stuck and the child hears nothing
+  // while the game's auto-mic timer keeps running. If a clip hasn't started
+  // producing audio within STALL_MS (or stalls mid-clip), we abandon it and
+  // speak that line with system TTS, which works offline. See playItem().
+  const STALL_MS = 4000;
+
+  // Preloaded clips, kept as in-memory blob: URLs (path → blob URL). We hold the
+  // bytes rather than just warming the HTTP cache because the <audio> element
+  // fetches media with RANGE requests, which a browser may or may not satisfy
+  // from a cached full response — a blob is certain, and takes the network out
+  // of the per-word path entirely. Bounded so a long session can't grow without
+  // limit (~250 KB a clip, so the cap is a few MB).
+  const clipCache = Object.create(null);
+  const clipOrder = [];                  // insertion order, for eviction
+  const clipPending = Object.create(null); // in-flight preloads
+  const MAX_CACHED_CLIPS = 40;
+
+  function cacheClip(url, objUrl) {
+    clipCache[url] = objUrl;
+    clipOrder.push(url);
+    while (clipOrder.length > MAX_CACHED_CLIPS) {
+      const old = clipOrder.shift();
+      const dead = clipCache[old];
+      // Never revoke the clip that's on the air right now.
+      if (!dead || (currentEl && currentEl.src === dead)) { clipOrder.push(old); break; }
+      delete clipCache[old];
+      try { URL.revokeObjectURL(dead); } catch (e) { /* ignore */ }
+    }
+  }
 
   // iPadOS 13+ reports as "MacIntel" but has a touch screen; catch it too.
   const IS_IOS =
@@ -108,32 +141,62 @@ window.Speech = (function () {
     if (!el) { speakUtter(item, done); return; }    // no <audio> support → TTS
 
     const startGen = gen;
+    const myTurn = ++clipTurn;   // this item's claim on the shared <audio> element
     let settled = false;
+    let watchdog = null;
+
+    // Are we still the item that owns the element? Callbacks can outlive their
+    // item — the stall watchdog is a timer, and play() can reject a tick after
+    // stop() — and by then the NEXT clip may already be running on the same
+    // (deliberately reused) element. A stale callback must settle its own item
+    // and touch nothing else, or it would strip the live item's handlers and
+    // wedge the queue.
+    function owns() { return clipTurn === myTurn && startGen === gen; }
 
     // Finish this item exactly once. `fell` = fall back to TTS for this item.
     // We detach our handlers but do NOT pause here: on normal end there's
     // nothing to pause, and on stop() the pause already happened in stop().
+    // (The stall path below is the exception — it pauses before falling back,
+    // so a clip that finally arrives can't blast over the TTS replacement.)
     function finish(fell) {
       if (settled) return; settled = true;
+      clearTimeout(watchdog);
+      if (!owns()) { done(); return; }               // superseded — settle only
       el.onended = null;
       el.onerror = null;
+      el.onplaying = null;
+      el.onwaiting = null;
       if (currentEl === el) currentEl = null;
-      if (startGen !== gen) { done(); return; }     // stop() happened — just settle the item
-      if (fell) { speakUtter(item, done); return; } // missing/failed clip → TTS fallback
+      if (fell) { speakUtter(item, done); return; }  // missing/failed clip → TTS fallback
       done();
+    }
+
+    // Armed while we're waiting for audio to flow; cleared once it does.
+    function armWatchdog() {
+      clearTimeout(watchdog);
+      watchdog = setTimeout(function () {
+        if (settled) return;
+        if (owns()) { try { el.pause(); } catch (e) { /* ignore */ } }
+        finish(true);                                // slow/dead network → TTS
+      }, STALL_MS);
     }
 
     el.onended = function () { finish(false); };
     el.onerror = function () { finish(true); };      // 404 / decode error / etc. → TTS
+    el.onplaying = function () { clearTimeout(watchdog); };  // audio is flowing
+    el.onwaiting = armWatchdog;                      // buffer ran dry mid-clip
 
     currentEl = el;
     el.muted = false;
     el.playbackRate = item.rate || 1;
     try { el.pause(); } catch (e) { /* ignore */ }
     // Setting src to the same value won't reload; force a fresh load each item.
-    el.src = item.audioSrc;
+    // A preloaded clip plays from memory (blob:), so a weak connection can't
+    // delay it — see preload(). Still the SAME reused <audio> element.
+    el.src = clipCache[item.audioSrc] || item.audioSrc;
     try { el.currentTime = 0; } catch (e) { /* not ready yet; fine */ }
 
+    armWatchdog();
     let p;
     try { p = el.play(); } catch (e) { finish(true); return; }
     // play() rejects on iOS if the gesture unlock didn't take, or on decode
@@ -186,6 +249,55 @@ window.Speech = (function () {
     /** Speak a short English helper phrase (queued like speakZh). */
     speakEn(text, rate) {
       enqueue({ kind: 'en', text: text, rate: rate });
+    },
+
+    /** True while a recorded clip is still loading/playing, or lines are still
+        queued behind it. The game checks this before auto-opening the mic so a
+        slow clip download can't leave the mic listening over the word she is
+        supposed to be copying. Deliberately does NOT consult
+        speechSynthesis.speaking: that flag is unreliable (it can stay stuck
+        true), and the game's auto-mic safety-net timer exists precisely because
+        TTS 'end' events can go missing — reporting a wedged utterance as "still
+        speaking" forever would defeat it. */
+    isSpeaking() {
+      const busyClip = !!(currentEl && !currentEl.paused && !currentEl.ended);
+      return queue.length > 0 || busyClip;
+    },
+
+    /** Download a list of clip paths into memory (best-effort, fire and forget).
+        Called when a chapter opens so its clips arrive during the intro rather
+        than one ~250 KB download at a time in the middle of each word — the
+        difference between a smooth chapter and one where every word waits on
+        the network. Failures are ignored: an un-preloaded clip just loads from
+        the network as before (and the stall watchdog covers it if that hangs).
+        Two at a time so a weak link isn't saturated, and each URL is fetched at
+        most once per session. */
+    preload(urls) {
+      if (!urls || !urls.length || typeof fetch !== 'function') return;
+      if (typeof URL === 'undefined' || !URL.createObjectURL) return;
+      const list = [];
+      for (let i = 0; i < urls.length; i++) {
+        const u = urls[i];
+        if (u && !clipCache[u] && !clipPending[u] && list.indexOf(u) === -1) list.push(u);
+      }
+      let next = 0;
+      function pump() {
+        if (next >= list.length) return;
+        const u = list[next++];
+        clipPending[u] = true;
+        function done() { delete clipPending[u]; pump(); }
+        let p;
+        try { p = fetch(u); } catch (e) { done(); return; }
+        p.then(function (res) {
+          if (!res.ok) return null;                 // 404 → leave it to the TTS fallback
+          return res.blob();
+        }).then(function (blob) {
+          if (blob && blob.size) cacheClip(u, URL.createObjectURL(blob));
+          done();
+        }, done);
+      }
+      pump();
+      pump();
     },
 
     /** Prime recorded-clip playback inside a user gesture (call from the first
@@ -299,16 +411,21 @@ window.Speech = (function () {
 
     /**
      * Listen for Mandarin speech once.
-     * Calls onDone({ error, candidates }) exactly once.
+     * Calls onDone({ error, candidates, durationMs }) exactly once.
      *  - candidates: array of transcript strings (finals, interims, alternatives)
      *  - error: null | 'unsupported' | 'no-speech' | 'not-allowed' | 'network' | ...
+     *  - durationMs: how long the mic was actually open. A session that ends in
+     *    a few hundred ms with nothing heard is the recognition service giving
+     *    up (iOS sends audio to Apple's servers, so a flaky link does this), not
+     *    the child staying silent — the game uses this to retry instead of
+     *    counting a failed attempt against her.
      */
     listen(opts) {
       const onDone = opts.onDone;
       const timeoutMs = opts.timeoutMs || 6000;
 
       if (!SR) {
-        onDone({ error: 'unsupported', candidates: [] });
+        onDone({ error: 'unsupported', candidates: [], durationMs: 0 });
         return null;
       }
 
@@ -321,13 +438,18 @@ window.Speech = (function () {
       const candidates = [];
       let errorSeen = null;
       let finished = false;
+      const startedAt = Date.now();
 
       function finish() {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
         try { rec.abort(); } catch (e) { /* already stopped */ }
-        onDone({ error: errorSeen, candidates });
+        onDone({
+          error: errorSeen,
+          candidates: candidates,
+          durationMs: Date.now() - startedAt,
+        });
       }
 
       const timer = setTimeout(finish, timeoutMs);

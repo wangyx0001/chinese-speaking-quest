@@ -51,6 +51,8 @@ window.Game = (function () {
     retryIdx: 0,
     presentId: 0,   // bumps every new card; invalidates a pending auto-listen
     autoTimer: null, // timer that auto-starts the mic after the word is read
+    autoWaits: 0,   // times auto-listen deferred because audio was still playing
+    micHiccups: 0,  // mic sessions that died instantly (flaky network), per word
   };
 
   /* ---------------- helpers ---------------- */
@@ -298,6 +300,28 @@ window.Game = (function () {
 
     Speech.stop();
     Speech.speakZh(ch.intro.zh, undefined, undefined, ch.intro.audioZh);
+
+    // Pull this chapter's remaining voice clips into the browser cache while
+    // she's reading the scene, instead of one ~250 KB download at a time in the
+    // middle of each word — on a weak connection that per-word wait is what
+    // pushes playback past the auto-mic timer. Started a beat late and left out
+    // the intro clip, which is playing right now, so the prefetch doesn't
+    // compete with it for a thin pipe.
+    setTimeout(function () { Speech.preload(chapterClips(s, ch)); }, 1200);
+  }
+
+  /** Every recorded clip this chapter can still play, for preloading. Includes
+      the shared engine phrases (prompt/praise/retry) — they're small, and
+      they're needed on the very first word. */
+  function chapterClips(s, ch) {
+    const urls = [ch.audioComplete];
+    (ch.words || []).forEach(function (w) { urls.push(w.audioZh); });
+    if (ch.finale) urls.push(ch.finale.audioZh);
+    if (s.ending) urls.push(s.ending.audioZh);
+    Object.keys(CORE_AUDIO).forEach(function (k) { urls.push(CORE_AUDIO[k]); });
+    PRAISE.forEach(function (p) { urls.push(p.audio); });
+    RETRY_LINES.forEach(function (r) { urls.push(r.audio); });
+    return urls.filter(Boolean);
   }
 
   function startChallenges() {
@@ -314,6 +338,7 @@ window.Game = (function () {
 
   function present() {
     state.presentId++;               // new card — cancel any pending auto-listen
+    state.micHiccups = 0;
     if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     const item = current();
     const level = levelOf(item);
@@ -350,6 +375,7 @@ window.Game = (function () {
 
   function armAutoFallback(pid) {
     if (state.autoTimer) clearTimeout(state.autoTimer);
+    state.autoWaits = 0;
     state.autoTimer = setTimeout(function () { autoListen(pid); }, 6000);
   }
 
@@ -368,11 +394,35 @@ window.Game = (function () {
     if (state.busy || state.listening) return;         // already handling / listening
     if ($('#screen-scene').classList.contains('hidden')) return; // left the scene
     if ($('#challenge').classList.contains('hidden')) return;    // not on a challenge
+
+    // The word may still be playing. The 6s safety net above is a wall-clock
+    // timer armed when the lines are QUEUED, so on a slow connection (each clip
+    // is a ~250 KB download) it can fire while the prompt or the word is still
+    // coming out of the speaker — the mic would then cut her model pronunciation
+    // off mid-sentence. Wait it out and re-check. Capped so a wedged clip can
+    // never strand her: after ~10s we open the mic regardless, and the child is
+    // still never blocked.
+    if (Speech.isSpeaking && Speech.isSpeaking() && state.autoWaits++ < 25) {
+      state.autoTimer = setTimeout(function () { autoListen(pid); }, 400);
+      return;
+    }
+
     listenCue(); // a gentle "your turn!" chirp
     setTimeout(function () {
       if (pid !== state.presentId || state.busy || state.listening) return;
       startListening(true);
     }, 280);
+  }
+
+  /** Re-open the mic for the SAME word after a hiccup (flaky network killed the
+      session), without replaying the word or counting an attempt. Keeps the
+      game hands-free — she should never have to tap a button to recover from
+      a bad connection. */
+  function retryListenSoon(delayMs) {
+    const pid = state.presentId;
+    if (state.autoTimer) clearTimeout(state.autoTimer);
+    state.autoWaits = 0;
+    state.autoTimer = setTimeout(function () { autoListen(pid); }, delayMs);
   }
 
   function startListening(auto) {
@@ -413,13 +463,33 @@ window.Game = (function () {
       enableHelper('The microphone is blocked, so Parent Helper Mode is on — tap ⭐ when she says the word!');
       return;
     }
+    // Speech recognition is a NETWORK service (on iOS the audio goes to Apple's
+    // servers), so a shaky connection kills the mic session almost the moment it
+    // opens — the "mic flickers on and off" symptom. That's not her fault and it
+    // must not cost her an attempt, and it must not dead-end on "tap the mic"
+    // either: re-open the mic ourselves so the game stays hands-free, and only
+    // fall back to Helper Mode once the connection has clearly given up.
     if (result.error === 'network') {
       state.networkErrors++;
-      if (state.networkErrors >= 2) {
+      if (state.networkErrors >= 3) {
         enableHelper('No internet for the mic game — Parent Helper Mode is on! (The voice still works.)');
-      } else {
-        feedback('The internet hiccuped — tap 🎤 and try again!', true);
+        return;
       }
+      feedback('The internet hiccuped — listening again… 再试一次!', true);
+      retryListenSoon(1200);
+      return;
+    }
+
+    // Same story with no error code: a session that opened and died in well
+    // under a second never gave her a chance to speak. Retry rather than tell
+    // her she was too quiet. Capped, then it falls through and counts normally
+    // so the 3-try effort pass still always arrives.
+    if (!result.error && result.candidates.length === 0 &&
+        result.durationMs !== undefined && result.durationMs < 1200 &&
+        state.micHiccups < 2) {
+      state.micHiccups++;
+      feedback('🎤 One moment… 等一下!', true);
+      retryListenSoon(900);
       return;
     }
 
