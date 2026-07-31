@@ -414,11 +414,11 @@ window.Speech = (function () {
      * Calls onDone({ error, candidates, durationMs }) exactly once.
      *  - candidates: array of transcript strings (finals, interims, alternatives)
      *  - error: null | 'unsupported' | 'no-speech' | 'not-allowed' | 'network' | ...
-     *  - durationMs: how long the mic was actually open. A session that ends in
-     *    a few hundred ms with nothing heard is the recognition service giving
-     *    up (iOS sends audio to Apple's servers, so a flaky link does this), not
-     *    the child staying silent — the game uses this to retry instead of
-     *    counting a failed attempt against her.
+     *  - durationMs: how long the mic was actually open. Informational only —
+     *    a session that ends in a few hundred ms with nothing heard is usually
+     *    the recognition service giving up (iOS sends audio to Apple's servers,
+     *    so a flaky link does this) rather than real silence. Handy in the
+     *    console when tuning; the game does not branch on it.
      */
     listen(opts) {
       const onDone = opts.onDone;

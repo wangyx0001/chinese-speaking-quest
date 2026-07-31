@@ -52,7 +52,6 @@ window.Game = (function () {
     presentId: 0,   // bumps every new card; invalidates a pending auto-listen
     autoTimer: null, // timer that auto-starts the mic after the word is read
     autoWaits: 0,   // times auto-listen deferred because audio was still playing
-    micHiccups: 0,  // mic sessions that died instantly (flaky network), per word
   };
 
   /* ---------------- helpers ---------------- */
@@ -338,7 +337,6 @@ window.Game = (function () {
 
   function present() {
     state.presentId++;               // new card — cancel any pending auto-listen
-    state.micHiccups = 0;
     if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
     const item = current();
     const level = levelOf(item);
@@ -414,17 +412,6 @@ window.Game = (function () {
     }, 280);
   }
 
-  /** Re-open the mic for the SAME word after a hiccup (flaky network killed the
-      session), without replaying the word or counting an attempt. Keeps the
-      game hands-free — she should never have to tap a button to recover from
-      a bad connection. */
-  function retryListenSoon(delayMs) {
-    const pid = state.presentId;
-    if (state.autoTimer) clearTimeout(state.autoTimer);
-    state.autoWaits = 0;
-    state.autoTimer = setTimeout(function () { autoListen(pid); }, delayMs);
-  }
-
   function startListening(auto) {
     if (state.busy || state.listening) return;
     if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
@@ -464,32 +451,18 @@ window.Game = (function () {
       return;
     }
     // Speech recognition is a NETWORK service (on iOS the audio goes to Apple's
-    // servers), so a shaky connection kills the mic session almost the moment it
-    // opens — the "mic flickers on and off" symptom. That's not her fault and it
-    // must not cost her an attempt, and it must not dead-end on "tap the mic"
-    // either: re-open the mic ourselves so the game stays hands-free, and only
-    // fall back to Helper Mode once the connection has clearly given up.
+    // servers), so a shaky connection can kill the mic session the moment it
+    // opens. Do NOT auto-reopen the mic on failure: on a persistently bad link
+    // that just makes it flicker on-and-off in rapid succession. Instead settle
+    // into a STABLE state — a gentle "tap the 🎤" the first time, then Parent
+    // Helper Mode (which needs no internet) if the connection keeps failing.
     if (result.error === 'network') {
       state.networkErrors++;
-      if (state.networkErrors >= 3) {
+      if (state.networkErrors >= 2) {
         enableHelper('No internet for the mic game — Parent Helper Mode is on! (The voice still works.)');
-        return;
+      } else {
+        feedback('The internet hiccuped — tap 🎤 and try again!', true);
       }
-      feedback('The internet hiccuped — listening again… 再试一次!', true);
-      retryListenSoon(1200);
-      return;
-    }
-
-    // Same story with no error code: a session that opened and died in well
-    // under a second never gave her a chance to speak. Retry rather than tell
-    // her she was too quiet. Capped, then it falls through and counts normally
-    // so the 3-try effort pass still always arrives.
-    if (!result.error && result.candidates.length === 0 &&
-        result.durationMs !== undefined && result.durationMs < 1200 &&
-        state.micHiccups < 2) {
-      state.micHiccups++;
-      feedback('🎤 One moment… 等一下!', true);
-      retryListenSoon(900);
       return;
     }
 
