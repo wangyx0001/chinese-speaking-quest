@@ -42,7 +42,6 @@ window.Speech = (function () {
   let clipTurn = 0;      // bumped per clip; identifies who owns the element now
 
   let micWarmed = false; // see warmupMic()
-  let micStream = null;  // persistent getUserMedia stream, see holdMic()
 
   // Clips are ~250 KB WAVs fetched from the network on demand. On a weak or
   // flaky connection one can take many seconds to arrive — or never arrive —
@@ -360,35 +359,27 @@ window.Speech = (function () {
       } catch (e) { /* best-effort — leave original behavior on failure */ }
     },
 
-    /** Pin the iOS audio session in record mode by holding a microphone capture
-        (getUserMedia) open — acquired the first time she enters a chapter and then
-        kept open for the REST OF THE SESSION. Background: warmupMic() only covers
-        the first activation, but each word does a full SpeechRecognition start→
-        abort (see listen()), and on iOS that flips the session INTO record mode
-        (ducking playback) and BACK each time — so playback volume dips and returns.
-        A held stream keeps the session in record mode continuously, so neither the
-        per-word start/stops NOR moving between chapters toggles it, and the volume
-        stays even (slightly lower, but consistent).
+    /** DISABLED — intentionally a no-op. This used to hold a getUserMedia audio
+        stream open for the whole session to pin the iOS audio session in record
+        mode, so playback volume stayed even (the per-word SpeechRecognition
+        start/abort otherwise ducks playback in and out). That held capture
+        STARVED per-word recognition on iPad: with the mic already captured,
+        webkitSpeechRecognition.start() would open and then immediately end with
+        no audio — the mic "flicked on then off" and the child could never be
+        heard (it surfaced from chapter 2 on, once the async getUserMedia had
+        fully engaged; chapter 1 worked before it took hold). getUserMedia
+        coexisting with SpeechRecognition was always the device-specific risk
+        here, and on this device it loses.
 
-        We deliberately do NOT release it between chapters: releasing let the
-        session revert, so the next chapter re-ducked. The cost is the iOS recording
-        indicator stays lit for the session — the accepted trade for even volume.
-        (The browser releases the stream when the tab closes; there's no in-session
-        moment we'd want it back.)
-
-        Call from a tap gesture (iOS needs one to grant the mic). Idempotent — the
-        micStream guard makes repeat calls no-ops. iOS-only; elsewhere playback
-        doesn't duck so this does nothing. Best-effort and async: if the mic can't
-        be acquired we fall back to the prior per-word behavior. The held stream is
-        inert (never read); it exists only to keep the audio session active. */
-    holdMic() {
-      if (!IS_IOS || micStream) return;
-      const md = navigator.mediaDevices;
-      if (!md || !md.getUserMedia) return;
-      md.getUserMedia({ audio: true }).then(function (stream) {
-        micStream = stream;
-      }).catch(function () { /* denied/unavailable — keep prior behavior */ });
-    },
+        A working microphone beats even volume — recognition is the whole game,
+        the volume dip is cosmetic — so the hold is gone. The session falls back
+        to per-word ducking (a slight volume dip while the mic is open, then it
+        returns); warmupMic() still evens out the very first activation. Kept as
+        a named no-op so the call site stays valid and, more importantly, so this
+        lesson is not re-learned the hard way. Do NOT reintroduce a persistent
+        getUserMedia hold without an on-device test that recognition still fires
+        every word. */
+    holdMic() { /* intentionally disabled — see above */ },
 
     /** Stop all speech immediately (always call before opening the mic!).
         Clears the queue and halts the current clip/utterance. Bumping `gen`

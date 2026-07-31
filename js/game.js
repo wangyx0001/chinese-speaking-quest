@@ -288,15 +288,6 @@ window.Game = (function () {
 
     show('scene');
 
-    // Pin the iOS audio session in record mode by holding the mic open (see
-    // Speech.holdMic) — acquired here on the first chapter and kept for the whole
-    // session so playback volume stays even both WITHIN and BETWEEN chapters
-    // (releasing between chapters let the session revert, so the next chapter
-    // re-ducked). Inside this tap gesture (iOS needs one to grant the mic), and
-    // only when the mic will actually be used (skip Helper Mode). Idempotent +
-    // no-op off iOS.
-    if (!state.helper && state.sttAvailable) Speech.holdMic();
-
     Speech.stop();
     Speech.speakZh(ch.intro.zh, undefined, undefined, ch.intro.audioZh);
 
@@ -438,6 +429,14 @@ window.Game = (function () {
   }
 
   function handleResult(result, auto) {
+    // One line per mic session, so a "flicks on then off" report can be
+    // diagnosed from the console: a session that ends in a few hundred ms with
+    // error=null and 0 candidates means the mic opened but got no audio (the
+    // classic symptom of another capture holding the mic — see Speech.holdMic).
+    console.log('[mic]', {
+      error: result.error, heard: result.candidates.length, ms: result.durationMs, auto: auto,
+    });
+
     // ---- errors that aren't her fault ----
     if (result.error === 'not-allowed' || result.error === 'service-not-allowed' ||
         result.error === 'unsupported' || result.error === 'start-failed') {
